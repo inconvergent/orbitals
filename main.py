@@ -17,7 +17,7 @@ from matplotlib import pylab as plt
 PI     = pi
 PII    = PI*2.
 
-NUM    = 100
+NUM    = 200
 MAXFS  = int(NUM/6.)
 NEARL  = 0.05
 FARL   = 0.2
@@ -81,19 +81,18 @@ def makeFriends(i):
 
   r = []
   for j in xrange(0,NUM):
-    if i != j:
-      r.append((R[i][j],j))
-  sorted(r, key=itemgetter(0))
+    if i != j and len(F[j]) < MAXFS\
+      and i not in F[j]:
+        r.append([R[i][j][0],j])
+  if not len(r):
+    return
+  r = sorted(r, key=itemgetter(0))
 
-  index = NUM-2
-  for k in xrange(0,NUM-1):
-    if random() < 0.1:
+  index = len(r)-1
+  for k in xrange(0,len(r)):
+    if random() < 0.5:
       index = k
       break
-  
-  for k in xrange(0,len(F[i])):
-    if F[i][k] == index:
-      return
 
   F[i].append(r[index][1])
   F[r[index][1]].append(i)
@@ -157,12 +156,12 @@ def run(ctx,X,Y,SX,SY):
         SY[j] -= sin(a)
       elif dist < FARL:
         pass
-        force = FARL - dist
+        speed = (FARL-dist)*2.
         aPI = a+PI
-        SX[i] += force*cos(aPI)
-        SY[i] += force*sin(aPI)
-        SX[j] -= force*cos(aPI)
-        SY[j] -= force*sin(aPI)
+        SX[i] += speed*cos(aPI)
+        SY[i] += speed*sin(aPI)
+        SX[j] -= speed*cos(aPI)
+        SY[j] -= speed*sin(aPI)
 
   t.append(time())
 
@@ -176,9 +175,10 @@ def run(ctx,X,Y,SX,SY):
   #showP(ctx,X,Y)
   t.append(time())
   
-  #for ti in xrange(0,len(t)-1):
-    #print str(t[ti+1] - t[ti]),
-  #print 
+  for ti in xrange(0,len(t)-1):
+    print '{:.9f}'\
+      .format(t[ti+1] - t[ti]),
+  print 
 
 def main():
   X       = np.zeros((NUM,1))
