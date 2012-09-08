@@ -13,7 +13,7 @@ from operator import itemgetter
 from time import time
 import numpy as np
 
-N      = 1000
+N      = 800
 N2     = N/2
 R      = 0.2
 NUM    = 200
@@ -22,18 +22,14 @@ PI     = pi
 PII    = PI*2.
 BACK   = 1.
 OUT    = 'img'
-MAXFS  = 10
+MAXFS  = 5
 NEARL  = 0.1
-FARL   = 0.2
+FARL   = 0.15
 RAD    = 0.2
 
 R      = [0.]*NUM
 A      = [0.]*NUM
 F      = [[] for i in xrange(0,NUM)]
-#X      = [0]*NUM
-#Y      = [0]*NUM
-#SX     = [0]*NUM
-#SY     = [0]*NUM
 
 def ctxInit():
   sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
@@ -54,27 +50,13 @@ def pInit(X,Y):
   return
 
 def showP(ctx,X,Y):
-  ctx.set_source_rgba(1,0,0,0.01)
+  ctx.set_source_rgb(1,0,0)
   for i in xrange(0,NUM):
     ctx.move_to(X[i],Y[i])
     ctx.arc(X[i],Y[i],2./N,0,PII)
   ctx.close_path()
   ctx.fill()
   return
-
-#def setDistances(X,Y):
-  #for i in xrange(0,NUM):
-    #for j in xrange(0,NUM):
-      #if i == j:
-        #continue
-      #dx = X[i] - X[j]
-      #dy = Y[i] - Y[j]
-      #a  = atan2(dy,dx)
-      #d  = sqrt(dx*dx+dy*dy)
-      #ii,jj = i*NUM+j,j*NUM+i
-      #R[jj],R[ii] = d,d
-      #A[ii],A[jj] = a,a+PI
-  #return
 
 def setDistances(X,Y):
   for i in xrange(0,NUM):
@@ -84,6 +66,7 @@ def setDistances(X,Y):
     d  = np.sqrt(dx*dx+dy*dy)
     R[i] = d
     A[i] = a
+    A[i][i+1:] += PI
   return
 
 def makeFriends(i):
@@ -145,9 +128,6 @@ def run(ctx,X,Y,SX,SY):
   setDistances(X,Y)
   t.append(time())
   
-  #for i in xrange(0,NUM):
-    #SX[i] = 0.
-    #SY[i] = 0.
   SX[:] = 0.
   SY[:] = 0.
   
@@ -157,7 +137,7 @@ def run(ctx,X,Y,SX,SY):
       if len(F[i]) < 1 or F[j] < 1:
         continue
       dist = R[i][j]
-      a = A[j][i]
+      a    = A[j][i]
 
       f = False
       for q in xrange(0,len(F[i])):
@@ -166,34 +146,34 @@ def run(ctx,X,Y,SX,SY):
           break
 
       if dist > NEARL and f:
-        SX[i] += cos(a)/N 
-        SY[i] += sin(a)/N 
-        SX[j] -= cos(a)/N 
-        SY[j] -= sin(a)/N 
+        SX[i] += cos(a) 
+        SY[i] += sin(a) 
+        SX[j] -= cos(a) 
+        SY[j] -= sin(a) 
       elif dist < FARL:
-        force = FARL - dist
-        aPI = a+PI
-        SX[i] += force*cos(aPI)/N 
-        SY[i] += force*sin(aPI)/N 
-        SX[j] -= force*cos(aPI)/N 
-        SY[j] -= force*sin(aPI)/N 
+        pass
+        #force = FARL - dist
+        #aPI = a+PI
+        #SX[i] += cos(aPI) 
+        #SY[i] += sin(aPI) 
+        #SX[j] -= cos(aPI) 
+        #SY[j] -= sin(aPI) 
+
   t.append(time())
 
-  #for i in xrange(0,NUM):
-    #X[i] += SX[i]
-    #Y[i] += SY[i]
-  X  += SX 
-  Y  += SY 
+  X  += SX
+  Y  += SY
 
   t.append(time())
   makeFriends(int(random()*NUM))
   t.append(time())
-  drawConnections(ctx,X,Y)
+  #drawConnections(ctx,X,Y)
+  showP(ctx,X,Y)
   t.append(time())
   
-  for ti in xrange(0,len(t)-1):
-    print str(t[ti+1] - t[ti]),
-  print 
+  #for ti in xrange(0,len(t)-1):
+    #print str(t[ti+1] - t[ti]),
+  #print 
 
 def main():
   X       = np.zeros((NUM,1))
@@ -203,9 +183,9 @@ def main():
   sur,ctx = ctxInit()
   pInit(X,Y)
 
-  ctx.set_source_rgba(0,0,0,0.2)
+  ctx.set_source_rgba(0,0,0,0.8)
 
-  for i in xrange(0,1000):
+  for i in xrange(0,500):
     run(ctx,X,Y,SX,SY)
 
   sur.write_to_png('./'+OUT+'.png')
