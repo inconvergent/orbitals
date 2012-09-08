@@ -13,29 +13,24 @@ from time import time
 import numpy as np
 from matplotlib import pylab as plt
 
-
 PI     = pi
 PII    = PI*2.
 
-NUM    = 200
-MAXFS  = int(NUM/6.)
-NEARL  = 0.05
-FARL   = 0.2
+NUM    = 50
+MAXFS  = int(NUM/6.) # max friendships pr node
+NEARL  = 0.00005        # comfort zone
+FARL   = 0.2         # ignore nodes beyond this distance
 
-N      = 800
-N2     = N/2
-GRAINS = 5
-BACK   = 1.
-OUT    = 'img'
+N      = 800         # size of png image
+N2     = N/2         
+GRAINS = 5           # number of grains in sand painting connections
+BACK   = 1.          # background color 
+OUT    = 'img'       # resulting image name
 
-RAD    = 0.1 # radius of starting circle
+RAD    = 0.1         # radius of starting circle
 
-STP    = 0.001
-steps  = 100
-
-R      = [0.]*NUM
-A      = [0.]*NUM
-F      = [[] for i in xrange(0,NUM)]
+STP    = 0.001       # scale motion in each iteration by this
+steps  = 500         # iterations
 
 def ctxInit():
   sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
@@ -64,7 +59,7 @@ def showP(ctx,X,Y):
   ctx.fill()
   return
 
-def setDistances(X,Y):
+def setDistances(X,Y,R,A):
   for i in xrange(0,NUM):
     dx = X[i] - X
     dy = Y[i] - Y
@@ -75,14 +70,14 @@ def setDistances(X,Y):
     A[i][i+1:] += PI
   return
 
-def makeFriends(i):
-  if len(F[i]) > MAXFS:
+def makeFriends(i,R,F):
+  if sum(F[i]) > MAXFS:
     return
 
   r = []
   for j in xrange(0,NUM):
-    if i != j and len(F[j]) < MAXFS\
-      and i not in F[j]:
+    if i != j and sum(F[j]) < MAXFS\
+      and not F[j][i]:
         r.append([R[i][j][0],j])
   if not len(r):
     return
@@ -90,78 +85,67 @@ def makeFriends(i):
 
   index = len(r)-1
   for k in xrange(0,len(r)):
-    if random() < 0.5:
+    if random() < 0.1:
       index = k
       break
-
-  F[i].append(r[index][1])
-  F[r[index][1]].append(i)
+ 
+  F[i][r[index][1]] = True
+  F[r[index][1]][i] = True
   return
 
-def drawConnections(ctx,X,Y):
-  for i in xrange(0,NUM):
-    for f in xrange(0,len(F[i])):
-      if i == F[i][f] or F[i][f] < i:
-        continue
-      dist = R[i][F[i][f]] * random()
-      a = A[i][F[i][f]]
+#def drawConnections(ctx,X,Y,R,A,F):
+  #for i in xrange(0,NUM):
+    #for f in xrange(0,len(F[i])):
+      #if i == F[i][f] or F[i][f] < i: # avoid painting each connection twice
+        #continue
+      #dist = R[i][F[i][f]] * random()
+      #a = A[i][F[i][f]]
 
-      sx = cos(a)
-      sy = sin(a)
-      scale = dist/GRAINS
+      #sx = cos(a)
+      #sy = sin(a)
+      #scale = dist/GRAINS
       
-      xp,yp = 0.,0.
-      if random() < 0.5:
-        xp = X[i]
-        yp = Y[i]
-      else:
-        xp = X[F[i][f]]
-        yp = Y[F[i][f]]
-        scale = -scale
+      #xp,yp = 0.,0.
+      #if random() < 0.5:
+        #xp = X[i]
+        #yp = Y[i]
+      #else:
+        #xp = X[F[i][f]]
+        #yp = Y[F[i][f]]
+        #scale = -scale
 
-      for q in xrange(0,GRAINS):
-        xp -= sx*scale
-        yp -= sy*scale
-        ctx.rectangle(xp,yp,1./N,1./N)
-        ctx.fill()
-  return
+      #for q in xrange(0,GRAINS):
+        #xp -= sx*scale
+        #yp -= sy*scale
+        #ctx.rectangle(xp,yp,1./N,1./N)
+        #ctx.fill()
+  #return
 
-def run(ctx,X,Y,SX,SY):
+def run(ctx,X,Y,SX,SY,R,A,F):
   t = []
   t.append(time())
-  setDistances(X,Y)
+  setDistances(X,Y,R,A)
   t.append(time())
   
   SX[:] = 0.
   SY[:] = 0.
   
   t.append(time())
+
   for i in xrange(0,NUM):
-    for j in xrange(i+1,NUM):
-      if len(F[i]) < 1 or F[j] < 1:
-        continue
-      dist = R[i][j]
-      a    = A[j][i]
+    d         = R[i]
+    print d
+    a         = A[i]
+    near      = (d > NEARL) == F[i]
+    far       = d < FARL
+    far[near] = False
+    speed     = FARL - d[far]
+    aPI       = a[far]+PI
 
-      f = False
-      for q in xrange(0,len(F[i])):
-        if j == F[i][q]:
-          f = True
-          break
-
-      if dist > NEARL and f:
-        SX[i] += cos(a)
-        SY[i] += sin(a)
-        SX[j] -= cos(a)
-        SY[j] -= sin(a)
-      elif dist < FARL:
-        pass
-        speed = (FARL-dist)*2.
-        aPI = a+PI
-        SX[i] += speed*cos(aPI)
-        SY[i] += speed*sin(aPI)
-        SX[j] -= speed*cos(aPI)
-        SY[j] -= speed*sin(aPI)
+    SX[near] += np.cos(a[near])
+    SY[near] += np.sin(a[near])
+    #SX[far]  += speed*np.cos(aPI)
+    #SY[far]  += speed*np.sin(aPI)
 
   t.append(time())
 
@@ -169,22 +153,25 @@ def run(ctx,X,Y,SX,SY):
   Y  += SY*STP
 
   t.append(time())
-  makeFriends(int(random()*NUM))
+  makeFriends(int(random()*NUM),R,F)
   t.append(time())
   #drawConnections(ctx,X,Y)
   #showP(ctx,X,Y)
   t.append(time())
   
-  for ti in xrange(0,len(t)-1):
-    print '{:.9f}'\
-      .format(t[ti+1] - t[ti]),
-  print 
+  #for ti in xrange(0,len(t)-1):
+    #print '{:.9f}'\
+      #.format(t[ti+1] - t[ti]),
+  #print 
 
 def main():
   X       = np.zeros((NUM,1))
   Y       = np.zeros((NUM,1))
   SX      = np.zeros((NUM,1))
   SY      = np.zeros((NUM,1))
+  R       = [0.]*NUM
+  A       = [0.]*NUM
+  F       = [np.zeros((NUM,1)) for i in xrange(0,NUM)]
   sur,ctx = ctxInit()
   pInit(X,Y)
 
@@ -193,13 +180,14 @@ def main():
   plt.ion()
   plt.figure()
   for i in xrange(0,steps):
-    run(ctx,X,Y,SX,SY)
+    run(ctx,X,Y,SX,SY,R,A,F)
 
     plt.clf()
     plt.plot(X,Y,'ro')
     for k,ff in enumerate(F):
-      for f in ff:
-        plt.plot([X[k],X[f]],[Y[k],Y[f]],'k-')
+      for fi in xrange(0,NUM):
+        if ff[fi]:
+          plt.plot([X[k],X[fi]],[Y[k],Y[fi]],'k-')
 
     plt.axis([0,1,0,1])
     ax = plt.gca()
