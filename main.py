@@ -5,27 +5,33 @@
 # inspired by complexification.net
 #
 
-import os, sys,Image
+import os,sys,cairo
 from math import log, sin, cos, pi, atan2, sqrt
 from random import random
-import cairo
 from operator import itemgetter
 from time import time
 import numpy as np
+from matplotlib import pylab as plt
+
+
+PI     = pi
+PII    = PI*2.
+
+NUM    = 100
+MAXFS  = int(NUM/6.)
+NEARL  = 0.05
+FARL   = 0.2
 
 N      = 800
 N2     = N/2
-R      = 0.2
-NUM    = 200
 GRAINS = 5
-PI     = pi
-PII    = PI*2.
 BACK   = 1.
 OUT    = 'img'
-MAXFS  = 5
-NEARL  = 0.1
-FARL   = 0.15
-RAD    = 0.2
+
+RAD    = 0.1 # radius of starting circle
+
+STP    = 0.001
+steps  = 100
 
 R      = [0.]*NUM
 A      = [0.]*NUM
@@ -88,8 +94,7 @@ def makeFriends(i):
   for k in xrange(0,len(F[i])):
     if F[i][k] == index:
       return
-  if len(F[r[index][1]]) > MAXFS:
-    return 
+
   F[i].append(r[index][1])
   F[r[index][1]].append(i)
   return
@@ -146,29 +151,29 @@ def run(ctx,X,Y,SX,SY):
           break
 
       if dist > NEARL and f:
-        SX[i] += cos(a) 
-        SY[i] += sin(a) 
-        SX[j] -= cos(a) 
-        SY[j] -= sin(a) 
+        SX[i] += cos(a)
+        SY[i] += sin(a)
+        SX[j] -= cos(a)
+        SY[j] -= sin(a)
       elif dist < FARL:
         pass
-        #force = FARL - dist
-        #aPI = a+PI
-        #SX[i] += cos(aPI) 
-        #SY[i] += sin(aPI) 
-        #SX[j] -= cos(aPI) 
-        #SY[j] -= sin(aPI) 
+        force = FARL - dist
+        aPI = a+PI
+        SX[i] += force*cos(aPI)
+        SY[i] += force*sin(aPI)
+        SX[j] -= force*cos(aPI)
+        SY[j] -= force*sin(aPI)
 
   t.append(time())
 
-  X  += SX
-  Y  += SY
+  X  += SX*STP
+  Y  += SY*STP
 
   t.append(time())
   makeFriends(int(random()*NUM))
   t.append(time())
   #drawConnections(ctx,X,Y)
-  showP(ctx,X,Y)
+  #showP(ctx,X,Y)
   t.append(time())
   
   #for ti in xrange(0,len(t)-1):
@@ -184,11 +189,24 @@ def main():
   pInit(X,Y)
 
   ctx.set_source_rgba(0,0,0,0.8)
-
-  for i in xrange(0,500):
+ 
+  plt.ion()
+  plt.figure()
+  for i in xrange(0,steps):
     run(ctx,X,Y,SX,SY)
 
-  sur.write_to_png('./'+OUT+'.png')
+    plt.clf()
+    plt.plot(X,Y,'ro')
+    for k,ff in enumerate(F):
+      for f in ff:
+        plt.plot([X[k],X[f]],[Y[k],Y[f]],'k-')
+
+    plt.axis([0,1,0,1])
+    ax = plt.gca()
+    ax.set_autoscale_on(False)
+    plt.draw()
+
+  #sur.write_to_png('./'+OUT+'.png')
   return
 
 if __name__ == '__main__' : main()
