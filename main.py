@@ -16,10 +16,11 @@ from matplotlib import pylab as plt
 PI     = pi
 PII    = PI*2.
 
-NUM    = 50
-MAXFS  = int(NUM/6.) # max friendships pr node
-NEARL  = 0.00005        # comfort zone
-FARL   = 0.2         # ignore nodes beyond this distance
+NUM    = 10
+#MAXFS  = int(NUM/6.) # max friendships pr node
+MAXFS  = 1
+NEARL  = 0.05        # comfort zone
+FARL   = 0.5         # ignore nodes beyond this distance
 
 N      = 800         # size of png image
 N2     = N/2         
@@ -67,7 +68,7 @@ def setDistances(X,Y,R,A):
     d  = np.sqrt(dx*dx+dy*dy)
     R[i] = d
     A[i] = a
-    A[i][i+1:] += PI
+    #A[i][:i] += PI
   return
 
 def makeFriends(i,R,F):
@@ -134,18 +135,17 @@ def run(ctx,X,Y,SX,SY,R,A,F):
 
   for i in xrange(0,NUM):
     d         = R[i]
-    print d
     a         = A[i]
     near      = (d > NEARL) == F[i]
     far       = d < FARL
     far[near] = False
-    speed     = FARL - d[far]
-    aPI       = a[far]+PI
+    speed     = 10*(FARL - d[far])
+    aa        = a[far]
 
-    SX[near] += np.cos(a[near])
-    SY[near] += np.sin(a[near])
-    #SX[far]  += speed*np.cos(aPI)
-    #SY[far]  += speed*np.sin(aPI)
+    #SX[near] -= np.cos(a[near])
+    #SY[near] -= np.sin(a[near])
+    SX[far]  += speed*np.cos(aa)
+    SY[far]  += speed*np.sin(aa)
 
   t.append(time())
 
@@ -153,7 +153,7 @@ def run(ctx,X,Y,SX,SY,R,A,F):
   Y  += SY*STP
 
   t.append(time())
-  makeFriends(int(random()*NUM),R,F)
+  #makeFriends(int(random()*NUM),R,F)
   t.append(time())
   #drawConnections(ctx,X,Y)
   #showP(ctx,X,Y)
