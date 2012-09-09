@@ -17,10 +17,10 @@ PI     = pi
 PII    = PI*2.
 
 NUM    = 10
-#MAXFS  = int(NUM/6.) # max friendships pr node
-MAXFS  = 1
-NEARL  = 0.05        # comfort zone
-FARL   = 0.5         # ignore nodes beyond this distance
+MAXFS  = int(NUM/10.) # max friendships pr node
+#MAXFS  = 3
+NEARL  = 0.02         # comfort zone
+FARL   = 0.2         # ignore nodes beyond this distance
 
 N      = 800         # size of png image
 N2     = N/2         
@@ -30,8 +30,8 @@ OUT    = 'img'       # resulting image name
 
 RAD    = 0.1         # radius of starting circle
 
-STP    = 0.001       # scale motion in each iteration by this
-steps  = 500         # iterations
+STP    = 0.008       # scale motion in each iteration by this
+steps  = 400         # iterations
 
 def ctxInit():
   sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
@@ -52,7 +52,7 @@ def pInit(X,Y):
   return
 
 def showP(ctx,X,Y):
-  ctx.set_source_rgb(1,0,0)
+  ctx.set_source_rgba(0,0,0,0.1)
   for i in xrange(0,NUM):
     ctx.move_to(X[i],Y[i])
     ctx.arc(X[i],Y[i],2./N,0,PII)
@@ -68,7 +68,6 @@ def setDistances(X,Y,R,A):
     d  = np.sqrt(dx*dx+dy*dy)
     R[i] = d
     A[i] = a
-    #A[i][:i] += PI
   return
 
 def makeFriends(i,R,F):
@@ -86,7 +85,7 @@ def makeFriends(i,R,F):
 
   index = len(r)-1
   for k in xrange(0,len(r)):
-    if random() < 0.1:
+    if random() < 0.05:
       index = k
       break
  
@@ -134,18 +133,19 @@ def run(ctx,X,Y,SX,SY,R,A,F):
   t.append(time())
 
   for i in xrange(0,NUM):
-    d         = R[i]
-    a         = A[i]
-    near      = (d > NEARL) == F[i]
-    far       = d < FARL
-    far[near] = False
-    speed     = 10*(FARL - d[far])
-    aa        = a[far]
+    xF       = np.logical_not(F[i])
+    d        = R[i]
+    a        = A[i]
+    near     = d > NEARL
+    near[xF] = False
+    far      = d < FARL
+    #far[near] = False
+    speed    = FARL - d[far]
 
-    #SX[near] -= np.cos(a[near])
-    #SY[near] -= np.sin(a[near])
-    SX[far]  += speed*np.cos(aa)
-    SY[far]  += speed*np.sin(aa)
+    #SX[near] += np.cos(a[near])
+    #SY[near] += np.sin(a[near])
+    SX[far]  -= np.cos(a[far])
+    SY[far]  -= np.sin(a[far])
 
   t.append(time())
 
@@ -169,9 +169,9 @@ def main():
   Y       = np.zeros((NUM,1))
   SX      = np.zeros((NUM,1))
   SY      = np.zeros((NUM,1))
-  R       = [0.]*NUM
-  A       = [0.]*NUM
-  F       = [np.zeros((NUM,1)) for i in xrange(0,NUM)]
+  R       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  A       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  F       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
   sur,ctx = ctxInit()
   pInit(X,Y)
 
@@ -186,7 +186,7 @@ def main():
     plt.plot(X,Y,'ro')
     for k,ff in enumerate(F):
       for fi in xrange(0,NUM):
-        if ff[fi]:
+        if ff[fi] and fi > k:
           plt.plot([X[k],X[fi]],[Y[k],Y[fi]],'k-')
 
     plt.axis([0,1,0,1])
