@@ -16,22 +16,21 @@ from matplotlib import pylab as plt
 PI     = pi
 PII    = PI*2.
 
-NUM    = 10
-MAXFS  = int(NUM/10.) # max friendships pr node
-#MAXFS  = 3
-NEARL  = 0.02         # comfort zone
-FARL   = 0.2         # ignore nodes beyond this distance
+NUM    = 300    # nodes
+MAXFS  = 40     # max friendships pr node
+NEARL  = 0.07   # comfort zone
+FARL   = 0.18   # ignore nodes beyond this distance
 
-N      = 800         # size of png image
+N      = 1000   # size of png image
 N2     = N/2         
-GRAINS = 5           # number of grains in sand painting connections
-BACK   = 1.          # background color 
-OUT    = 'img'       # resulting image name
+GRAINS = 5      # number of grains in sand painting connections
+BACK   = 1.     # background color 
+OUT    = 'img'  # resulting image name
 
-RAD    = 0.1         # radius of starting circle
+RAD    = 0.3    # radius of starting circle
 
-STP    = 0.008       # scale motion in each iteration by this
-steps  = 400         # iterations
+STP    = 0.001  # scale motion in each iteration by this
+steps  = 400    # iterations
 
 def ctxInit():
   sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
@@ -52,7 +51,7 @@ def pInit(X,Y):
   return
 
 def showP(ctx,X,Y):
-  ctx.set_source_rgba(0,0,0,0.1)
+  ctx.set_source_rgba(1,0,0,0.5)
   for i in xrange(0,NUM):
     ctx.move_to(X[i],Y[i])
     ctx.arc(X[i],Y[i],2./N,0,PII)
@@ -85,7 +84,7 @@ def makeFriends(i,R,F):
 
   index = len(r)-1
   for k in xrange(0,len(r)):
-    if random() < 0.05:
+    if random() < 0.1:
       index = k
       break
  
@@ -93,33 +92,35 @@ def makeFriends(i,R,F):
   F[r[index][1]][i] = True
   return
 
-#def drawConnections(ctx,X,Y,R,A,F):
-  #for i in xrange(0,NUM):
-    #for f in xrange(0,len(F[i])):
-      #if i == F[i][f] or F[i][f] < i: # avoid painting each connection twice
-        #continue
-      #dist = R[i][F[i][f]] * random()
-      #a = A[i][F[i][f]]
+def drawConnections(ctx,X,Y,R,A,F):
+  for i in xrange(0,NUM):
+    for j in xrange(i+1,NUM):
+      if not F[i][j]:
+        continue
 
-      #sx = cos(a)
-      #sy = sin(a)
-      #scale = dist/GRAINS
+      a = A[i][j]
+      sx = cos(a)
+      sy = sin(a)
       
-      #xp,yp = 0.,0.
-      #if random() < 0.5:
-        #xp = X[i]
-        #yp = Y[i]
-      #else:
-        #xp = X[F[i][f]]
-        #yp = Y[F[i][f]]
-        #scale = -scale
+      d = R[i][j]
+      scale = random()*d/GRAINS
+      if random()<0.5:
+        q = i
+      else:
+        q = j
+        scale *= -1
 
-      #for q in xrange(0,GRAINS):
-        #xp -= sx*scale
-        #yp -= sy*scale
-        #ctx.rectangle(xp,yp,1./N,1./N)
-        #ctx.fill()
-  #return
+      xp = X[q][0]
+      yp = Y[q][0]
+    
+      ctx.set_source_rgba(0,0,0,0.1)
+      for q in xrange(0,GRAINS):
+        xp -= sx*scale
+        yp -= sy*scale
+        ctx.rectangle(xp,yp,1./N,1./N)
+        ctx.fill()
+
+  return
 
 def run(ctx,X,Y,SX,SY,R,A,F):
   t = []
@@ -133,19 +134,21 @@ def run(ctx,X,Y,SX,SY,R,A,F):
   t.append(time())
 
   for i in xrange(0,NUM):
-    xF       = np.logical_not(F[i])
-    d        = R[i]
-    a        = A[i]
-    near     = d > NEARL
-    near[xF] = False
-    far      = d < FARL
-    #far[near] = False
-    speed    = FARL - d[far]
+    xF        = np.logical_not(F[i])
+    d         = R[i]
+    a         = A[i]
+    near      = d > NEARL
+    near[xF]  = False
+    far       = d < FARL
+    far[near] = False
+    near[i]   = False
+    far[i]    = False
+    speed     = FARL - d[far]
 
-    #SX[near] += np.cos(a[near])
-    #SY[near] += np.sin(a[near])
-    SX[far]  -= np.cos(a[far])
-    SY[far]  -= np.sin(a[far])
+    SX[near] += np.cos(a[near])
+    SY[near] += np.sin(a[near])
+    SX[far]  -= speed*np.cos(a[far])
+    SY[far]  -= speed*np.sin(a[far])
 
   t.append(time())
 
@@ -153,16 +156,30 @@ def run(ctx,X,Y,SX,SY,R,A,F):
   Y  += SY*STP
 
   t.append(time())
-  #makeFriends(int(random()*NUM),R,F)
-  t.append(time())
-  #drawConnections(ctx,X,Y)
   #showP(ctx,X,Y)
+  drawConnections(ctx,X,Y,R,A,F)
+  t.append(time())
+
+  makeFriends(int(random()*NUM),R,F)
   t.append(time())
   
   #for ti in xrange(0,len(t)-1):
     #print '{:.9f}'\
       #.format(t[ti+1] - t[ti]),
   #print 
+
+def plotIt(X,Y,F):
+  plt.clf()
+  plt.plot(X,Y,'ro')
+  for k,ff in enumerate(F):
+    for fi in xrange(0,NUM):
+      if ff[fi] and fi > k:
+        plt.plot([X[k],X[fi]],[Y[k],Y[fi]],'k-')
+
+  plt.axis([0,1,0,1])
+  ax = plt.gca()
+  ax.set_autoscale_on(False)
+  plt.draw()
 
 def main():
   X       = np.zeros((NUM,1))
@@ -174,27 +191,16 @@ def main():
   F       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
   sur,ctx = ctxInit()
   pInit(X,Y)
-
-  ctx.set_source_rgba(0,0,0,0.8)
+  
+  ctx.set_line_width(1./N)
  
-  plt.ion()
-  plt.figure()
+  #plt.ion() ; plt.figure()
   for i in xrange(0,steps):
     run(ctx,X,Y,SX,SY,R,A,F)
+    #if i%2: continue
+    #plotIt(X,Y,F)
+  sur.write_to_png('./'+OUT+'.png')
 
-    plt.clf()
-    plt.plot(X,Y,'ro')
-    for k,ff in enumerate(F):
-      for fi in xrange(0,NUM):
-        if ff[fi] and fi > k:
-          plt.plot([X[k],X[fi]],[Y[k],Y[fi]],'k-')
-
-    plt.axis([0,1,0,1])
-    ax = plt.gca()
-    ax.set_autoscale_on(False)
-    plt.draw()
-
-  #sur.write_to_png('./'+OUT+'.png')
   return
 
 if __name__ == '__main__' : main()
