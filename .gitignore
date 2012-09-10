@@ -1,3 +1,5 @@
 *.png
 *.*~
 *.swp
+run*/*
+colors.gif
