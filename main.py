@@ -20,7 +20,7 @@ PII    = PI*2.
 NUM    = 300    # nodes
 MAXFS  = 40     # max friendships pr node
 NEARL  = 0.07   # comfort zone
-FARL   = 0.18   # ignore nodes beyond this distance
+FARL   = 0.1    # ignore nodes beyond this distance
 
 N      = 1000   # size of png image
 N2     = N/2         
@@ -30,8 +30,8 @@ OUT    = 'img'  # resulting image name
 
 RAD    = 0.3    # radius of starting circle
 
-STP    = 0.001  # scale motion in each iteration by this
-steps  = 400    # iterations
+STP    = 0.0007 # scale motion in each iteration by this
+steps  = 1000   # iterations
 
 def ctxInit():
   sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
@@ -123,7 +123,7 @@ def drawConnections(ctx,X,Y,R,A,F):
 
   return
 
-def run(ctx,X,Y,SX,SY,R,A,F):
+def run(ctx,X,Y,SX,SY,R,A,F,NEARL,FARL):
   t = []
   t.append(time())
   setDistances(X,Y,R,A)
@@ -183,24 +183,31 @@ def plotIt(X,Y,F):
   plt.draw()
 
 def main():
-  X       = np.zeros((NUM,1))
-  Y       = np.zeros((NUM,1))
-  SX      = np.zeros((NUM,1))
-  SY      = np.zeros((NUM,1))
-  R       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-  A       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-  F       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-  sur,ctx = ctxInit()
-  pInit(X,Y)
-  
-  ctx.set_line_width(1./N)
- 
-  #plt.ion() ; plt.figure()
-  for i in xrange(0,steps):
-    run(ctx,X,Y,SX,SY,R,A,F)
-    #if i%2: continue
-    #plotIt(X,Y,F)
-  sur.write_to_png('./'+OUT+'.png')
+  farmult =  0.05
+  nearmult = 0.02
+  for g in xrange(1,10):
+    for h in xrange(1,10):
+      FARL = float(farmult) * float(g)
+      NEARL = float(nearmult) * float(h)
+      X       = np.zeros((NUM,1))
+      Y       = np.zeros((NUM,1))
+      SX      = np.zeros((NUM,1))
+      SY      = np.zeros((NUM,1))
+      R       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+      A       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+      F       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+      sur,ctx = ctxInit()
+      pInit(X,Y)
+      
+      ctx.set_line_width(1./N)
+     
+      #plt.ion() ; plt.figure()
+      for i in xrange(0,steps):
+        print i
+        run(ctx,X,Y,SX,SY,R,A,F,NEARL,FARL)
+        #if i%2: continue
+        #plotIt(X,Y,F)
+      sur.write_to_png('./'+OUT+str(NEARL)+'x'+str(FARL)+'.png')
 
   return
 
