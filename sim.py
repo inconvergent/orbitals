@@ -1,10 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# orbitals. andershoff.net
-# inspired by complexification.net
-#
-# master
 
 import os,sys,cairo,Image
 from math import log, sin, cos, pi, atan2, sqrt
@@ -13,6 +9,7 @@ from operator import itemgetter
 from time import time
 import numpy as np
 from matplotlib import pylab as plt
+import pickle as pkl
 
 PI     = pi
 PII    = PI*2.
@@ -30,17 +27,8 @@ OUT    = 'img'  # resulting image name
 
 RAD    = 0.1    # radius of starting circle
 
-STP    = 0.0009 # scale motion in each iteration by this
+STP    = 0.001  # scale motion in each iteration by this
 steps  = 1000   # iterations
-
-def ctxInit():
-  sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
-  ctx = cairo.Context(sur)
-  ctx.scale(N,N)
-  ctx.set_source_rgb(BACK,BACK,BACK)
-  ctx.rectangle(0,0,1,1)
-  ctx.fill()
-  return sur,ctx
 
 def pInit(X,Y):
   for i in xrange(0,NUM):
@@ -49,15 +37,6 @@ def pInit(X,Y):
     y = RAD * cos(the)
     X[i] = 0.5+x
     Y[i] = 0.5+y
-  return
-
-def showP(ctx,X,Y):
-  ctx.set_source_rgba(1,0,0,0.5)
-  for i in xrange(0,NUM):
-    ctx.move_to(X[i],Y[i])
-    ctx.arc(X[i],Y[i],2./N,0,PII)
-  ctx.close_path()
-  ctx.fill()
   return
 
 def setDistances(X,Y,R,A):
@@ -93,7 +72,7 @@ def makeFriends(i,R,F):
   F[r[index][1]][i] = True
   return
 
-def getConnectionPoints(ctx,X,Y,R,A,F,POINTS):
+def getConnectionPoints(X,Y,R,A,F,POINTS):
   for i in xrange(0,NUM):
     for j in xrange(i+1,NUM):
       if not F[i][j]:
@@ -122,20 +101,7 @@ def getConnectionPoints(ctx,X,Y,R,A,F,POINTS):
 
   return
 
-def paintIt(ctx,POINTS,colors,opa=0.2):
-  n = len(POINTS)/3
-  ncolors = len(colors)
-  for k in xrange(0,n):
-    k3 = k*3
-    ij = POINTS[k3]
-    rgb = colors[ij % ncolors]
-    ctx.set_source_rgba(rgb[0],rgb[1],rgb[2],opa)
-    ctx.rectangle(POINTS[k3+1],POINTS[k3+2],1./N,1./N)
-    ctx.fill()
-
-  return
-
-def run(ctx,X,Y,SX,SY,R,A,F,NEARL,FARL):
+def run(X,Y,SX,SY,R,A,F,NEARL,FARL):
   t = []
   t.append(time())
   setDistances(X,Y,R,A)
@@ -207,9 +173,6 @@ def getColors(f):
 def main():
   POINTS = []
 
-  #colors = getColors('colors.gif')
-  colors = [[0,0,0]]
-
   farmult =  0.05
   nearmult = 0.02
   g = 3
@@ -223,20 +186,21 @@ def main():
   R       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
   A       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
   F       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-  sur,ctx = ctxInit()
+
   pInit(X,Y)
   
-  ctx.set_line_width(1./N)
- 
   for i in xrange(0,steps):
     if not i%10:
       print i
-    run(ctx,X,Y,SX,SY,R,A,F,NEARL,FARL)
-    getConnectionPoints(ctx,X,Y,R,A,F,POINTS)
+    run(X,Y,SX,SY,R,A,F,NEARL,FARL)
+    getConnectionPoints(X,Y,R,A,F,POINTS)
   print
 
-  paintIt(ctx,POINTS,colors,opa=0.2)
-  sur.write_to_png('./'+OUT+str(NEARL)+'x'+str(FARL)+'.png')
+  f = open('dots.pkl','wb')
+
+  pkl.dump(POINTS,f)
+
+  f.close()
 
   return
 

@@ -2,3 +2,5 @@
 *.*~
 *.swp
 colors.gif
+*.pyc
+*.pkl
