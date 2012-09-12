@@ -14,21 +14,17 @@ import pickle as pkl
 PI     = pi
 PII    = PI*2.
 
-NUM    = 300    # nodes
-MAXFS  = 40     # max friendships pr node
-NEARL  = 0.07   # comfort zone
-FARL   = 0.1    # ignore nodes beyond this distance
+NUM    = 300     # nodes
+MAXFS  = 30      # max friendships pr node
+NEARL  = 0.07    # comfort zone
+FARL   = 0.1     # ignore nodes beyond this distance
 
-N      = 1000   # size of png image
-N2     = N/2         
-GRAINS = 4      # number of grains in sand painting connections
-BACK   = 1.     # background color 
-OUT    = 'img'  # resulting image name
+GRAINS = 10      # number of grains in sand painting connections
 
-RAD    = 0.1    # radius of starting circle
+RAD    = 0.1     # radius of starting circle
 
-STP    = 0.001  # scale motion in each iteration by this
-steps  = 1000   # iterations
+STP    = 0.0001  # scale motion in each iteration by this
+steps  = 10000   # iterations
 
 def pInit(X,Y):
   for i in xrange(0,NUM):
@@ -37,6 +33,7 @@ def pInit(X,Y):
     y = RAD * cos(the)
     X[i] = 0.5+x
     Y[i] = 0.5+y
+
   return
 
 def setDistances(X,Y,R,A):
@@ -47,6 +44,7 @@ def setDistances(X,Y,R,A):
     d  = np.sqrt(dx*dx+dy*dy)
     R[i] = d
     A[i] = a
+
   return
 
 def makeFriends(i,R,F):
@@ -70,6 +68,7 @@ def makeFriends(i,R,F):
  
   F[i][r[index][1]] = True
   F[r[index][1]][i] = True
+
   return
 
 def getConnectionPoints(X,Y,R,A,F,POINTS):
@@ -103,15 +102,11 @@ def getConnectionPoints(X,Y,R,A,F,POINTS):
 
 def run(X,Y,SX,SY,R,A,F,NEARL,FARL):
   t = []
-  t.append(time())
   setDistances(X,Y,R,A)
-  t.append(time())
   
   SX[:] = 0.
   SY[:] = 0.
   
-  t.append(time())
-
   for i in xrange(0,NUM):
     xF        = np.logical_not(F[i])
     d         = R[i]
@@ -129,17 +124,11 @@ def run(X,Y,SX,SY,R,A,F,NEARL,FARL):
     SX[far]  -= speed*np.cos(a[far])
     SY[far]  -= speed*np.sin(a[far])
 
-  t.append(time())
-  X  += SX*STP
-  Y  += SY*STP
-  t.append(time())
+  X += SX*STP
+  Y += SY*STP
   makeFriends(int(random()*NUM),R,F)
-  t.append(time())
   
-  #for ti in xrange(0,len(t)-1):
-    #print '{:.9f}'\
-      #.format(t[ti+1] - t[ti]),
-  #print 
+  return
 
 def plotIt(X,Y,F):
   #plt.ion() ; plt.figure() # need to run this once on first run.
@@ -155,6 +144,8 @@ def plotIt(X,Y,F):
   ax.set_autoscale_on(False)
   plt.draw()
 
+  return
+
 def getColors(f):
   scale = 255.
   im = Image.open(f)
@@ -168,6 +159,7 @@ def getColors(f):
         .format(r,g,b)
       res[key] = [r/scale,g/scale,b/scale]
   res = [value for key,value in res.iteritems()]
+
   return res
 
 def main():
@@ -177,15 +169,15 @@ def main():
   nearmult = 0.02
   g = 3
   h = 3
-  FARL = float(farmult) * float(g)
+  FARL  = float(farmult) * float(g)
   NEARL = float(nearmult) * float(h)
-  X       = np.zeros((NUM,1))
-  Y       = np.zeros((NUM,1))
-  SX      = np.zeros((NUM,1))
-  SY      = np.zeros((NUM,1))
-  R       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-  A       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-  F       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  X  = np.zeros((NUM,1))
+  Y  = np.zeros((NUM,1))
+  SX = np.zeros((NUM,1))
+  SY = np.zeros((NUM,1))
+  R  = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  A  = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  F  = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
 
   pInit(X,Y)
   
