@@ -6,7 +6,7 @@
 #
 # master
 
-import os,sys,cairo
+import os,sys,cairo,Image
 from math import log, sin, cos, pi, atan2, sqrt
 from random import random
 from operator import itemgetter
@@ -24,13 +24,13 @@ FARL   = 0.1    # ignore nodes beyond this distance
 
 N      = 1000   # size of png image
 N2     = N/2         
-GRAINS = 5      # number of grains in sand painting connections
+GRAINS = 4      # number of grains in sand painting connections
 BACK   = 1.     # background color 
 OUT    = 'img'  # resulting image name
 
-RAD    = 0.3    # radius of starting circle
+RAD    = 0.1    # radius of starting circle
 
-STP    = 0.0007 # scale motion in each iteration by this
+STP    = 0.0009 # scale motion in each iteration by this
 steps  = 1000   # iterations
 
 def ctxInit():
@@ -93,7 +93,7 @@ def makeFriends(i,R,F):
   F[r[index][1]][i] = True
   return
 
-def drawConnections(ctx,X,Y,R,A,F):
+def getConnectionPoints(ctx,X,Y,R,A,F,POINTS):
   for i in xrange(0,NUM):
     for j in xrange(i+1,NUM):
       if not F[i][j]:
@@ -113,13 +113,25 @@ def drawConnections(ctx,X,Y,R,A,F):
 
       xp = X[q][0]
       yp = Y[q][0]
-    
-      ctx.set_source_rgba(0,0,0,0.1)
+      
+      ij = NUM*i + j
       for q in xrange(0,GRAINS):
         xp -= sx*scale
         yp -= sy*scale
-        ctx.rectangle(xp,yp,1./N,1./N)
-        ctx.fill()
+        POINTS.extend([ij,xp,yp])
+
+  return
+
+def paintIt(ctx,POINTS,colors,opa=0.2):
+  n = len(POINTS)/3
+  ncolors = len(colors)
+  for k in xrange(0,n):
+    k3 = k*3
+    ij = POINTS[k3]
+    rgb = colors[ij % ncolors]
+    ctx.set_source_rgba(rgb[0],rgb[1],rgb[2],opa)
+    ctx.rectangle(POINTS[k3+1],POINTS[k3+2],1./N,1./N)
+    ctx.fill()
 
   return
 
@@ -152,15 +164,9 @@ def run(ctx,X,Y,SX,SY,R,A,F,NEARL,FARL):
     SY[far]  -= speed*np.sin(a[far])
 
   t.append(time())
-
   X  += SX*STP
   Y  += SY*STP
-
   t.append(time())
-  #showP(ctx,X,Y)
-  drawConnections(ctx,X,Y,R,A,F)
-  t.append(time())
-
   makeFriends(int(random()*NUM),R,F)
   t.append(time())
   
@@ -170,6 +176,7 @@ def run(ctx,X,Y,SX,SY,R,A,F,NEARL,FARL):
   #print 
 
 def plotIt(X,Y,F):
+  #plt.ion() ; plt.figure() # need to run this once on first run.
   plt.clf()
   plt.plot(X,Y,'ro')
   for k,ff in enumerate(F):
@@ -182,32 +189,54 @@ def plotIt(X,Y,F):
   ax.set_autoscale_on(False)
   plt.draw()
 
+def getColors(f):
+  scale = 255.
+  im = Image.open(f)
+  w,h = im.size
+  rgbim = im.convert('RGB')
+  res = {}
+  for i in xrange(0,w):
+    for j in xrange(0,h):
+      r,g,b = rgbim.getpixel((i,j))
+      key = '{:03d}{:03d}{:03d}'\
+        .format(r,g,b)
+      res[key] = [r/scale,g/scale,b/scale]
+  res = [value for key,value in res.iteritems()]
+  return res
+
 def main():
+  POINTS = []
+
+  #colors = getColors('colors.gif')
+  colors = [[0,0,0]]
+
   farmult =  0.05
   nearmult = 0.02
-  for g in xrange(1,10):
-    for h in xrange(1,10):
-      FARL = float(farmult) * float(g)
-      NEARL = float(nearmult) * float(h)
-      X       = np.zeros((NUM,1))
-      Y       = np.zeros((NUM,1))
-      SX      = np.zeros((NUM,1))
-      SY      = np.zeros((NUM,1))
-      R       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-      A       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-      F       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-      sur,ctx = ctxInit()
-      pInit(X,Y)
-      
-      ctx.set_line_width(1./N)
-     
-      #plt.ion() ; plt.figure()
-      for i in xrange(0,steps):
-        print i
-        run(ctx,X,Y,SX,SY,R,A,F,NEARL,FARL)
-        #if i%2: continue
-        #plotIt(X,Y,F)
-      sur.write_to_png('./'+OUT+str(NEARL)+'x'+str(FARL)+'.png')
+  g = 3
+  h = 3
+  FARL = float(farmult) * float(g)
+  NEARL = float(nearmult) * float(h)
+  X       = np.zeros((NUM,1))
+  Y       = np.zeros((NUM,1))
+  SX      = np.zeros((NUM,1))
+  SY      = np.zeros((NUM,1))
+  R       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  A       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  F       = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  sur,ctx = ctxInit()
+  pInit(X,Y)
+  
+  ctx.set_line_width(1./N)
+ 
+  for i in xrange(0,steps):
+    if not i%10:
+      print i
+    run(ctx,X,Y,SX,SY,R,A,F,NEARL,FARL)
+    getConnectionPoints(ctx,X,Y,R,A,F,POINTS)
+  print
+
+  paintIt(ctx,POINTS,colors,opa=0.2)
+  sur.write_to_png('./'+OUT+str(NEARL)+'x'+str(FARL)+'.png')
 
   return
 
