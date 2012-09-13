@@ -6,6 +6,10 @@ path.append('./') # kinda bad
 
 from sim import *
 
+N      = 2000   # size of png image
+BACK   = 1.     # background color 
+OUT    = 'img'  # resulting image name
+
 def ctxInit():
   sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
   ctx = cairo.Context(sur)
@@ -37,17 +41,38 @@ def paintIt(ctx,POINTS,colors,opa=0.2):
 
   return
 
-def main():
-  #colors = getColors('colors.gif')
+def getColors(f):
+  scale = 255.
+  im = Image.open(f)
+  w,h = im.size
+  rgbim = im.convert('RGB')
+  res = {}
+  for i in xrange(0,w):
+    for j in xrange(0,h):
+      r,g,b = rgbim.getpixel((i,j))
+      key = '{:03d}{:03d}{:03d}'\
+        .format(r,g,b)
+      res[key] = [r/scale,g/scale,b/scale]
+  res = [value for key,value in res.iteritems()]
 
+  return res
+
+def main():
+  
+  #colors = [[0,0,0]]
+  colors = getColors('colors.gif')
+  
+  print 'reading datafile ... ',
   f = open('dots.pkl','rb')
   POINTS = pkl.load(f)
   f.close()
+  print 'done'
 
-  colors = [[0,0,0]]
   sur,ctx = ctxInit()
 
-  paintIt(ctx,POINTS,colors,opa=0.2)
+  print 'painting ... ',
+  paintIt(ctx,POINTS,colors,opa=1)
+  print 'done'
   sur.write_to_png('./'+OUT+'.png')
 
 if __name__ == '__main__': main()

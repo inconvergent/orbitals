@@ -146,21 +146,6 @@ def plotIt(X,Y,F):
 
   return
 
-def getColors(f):
-  scale = 255.
-  im = Image.open(f)
-  w,h = im.size
-  rgbim = im.convert('RGB')
-  res = {}
-  for i in xrange(0,w):
-    for j in xrange(0,h):
-      r,g,b = rgbim.getpixel((i,j))
-      key = '{:03d}{:03d}{:03d}'\
-        .format(r,g,b)
-      res[key] = [r/scale,g/scale,b/scale]
-  res = [value for key,value in res.iteritems()]
-
-  return res
 
 def main():
   POINTS = []
@@ -181,18 +166,23 @@ def main():
 
   pInit(X,Y)
   
+  nc = 0
   for i in xrange(0,steps):
     if not i%10:
       print i
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     getConnectionPoints(X,Y,R,A,F,POINTS)
-  print
-
-  f = open('dots.pkl','wb')
-
-  pkl.dump(POINTS,f)
-
-  f.close()
+    if not (i+1) % 1000:
+      fname = 'dots{:04d}.pkl'\
+        .format(nc)
+      print 'writing to {:s} ... '\
+        .format(fname)
+      f = open(fname,'wb')
+      pkl.dump(POINTS,f)
+      f.close()
+      print 'done'
+      nc += 1
+      POINTS = []
 
   return
 
