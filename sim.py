@@ -21,10 +21,10 @@ FARL   = 0.1     # ignore nodes beyond this distance
 
 GRAINS = 10      # number of grains in sand painting connections
 
-RAD    = 0.1     # radius of starting circle
+RAD    = 0.25     # radius of starting circle
 
 STP    = 0.0001  # scale motion in each iteration by this
-steps  = 10000   # iterations
+steps  = 8000   # iterations
 
 def pInit(X,Y):
   for i in xrange(0,NUM):
@@ -148,7 +148,6 @@ def plotIt(X,Y,F):
 
 
 def main():
-  POINTS = []
 
   farmult =  0.05
   nearmult = 0.02
@@ -167,12 +166,15 @@ def main():
   pInit(X,Y)
   
   nc = 0
+
+  POINTS = []
+
   for i in xrange(0,steps):
     if not i%10:
       print i
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     getConnectionPoints(X,Y,R,A,F,POINTS)
-    if not (i+1) % 1000:
+    if not (i+1) % 500:
       fname = 'dots{:04d}.pkl'\
         .format(nc)
       print 'writing to {:s} ... '\

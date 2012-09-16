@@ -4,6 +4,7 @@
 from sys import path
 path.append('./') # kinda bad
 
+from scipy import signal
 from sim import *
 
 N      = 2000   # size of png image
@@ -64,20 +65,35 @@ def countGrid(G,P):
     k3 = k*3
     x = int(N*P[k3+1])
     y = int(N*P[k3+2])
-    G[x,y] += 1
+    if x < N and y < N:
+      G[x,y] += 1
   return
 
+def gauss_kern(size):
+    size = int(size)        
+    x, y = np.mgrid[-size:size+1, -size:size+1]
+    g = np.exp(-(x**2/float(size)+y**2/float(size)))
+
+    return g / g.sum()
+
 def paintGrid(ctx,G):
-  scale = max(G.flatten())
-  print scale
-  G = G/float(scale)
+  kernsize = 3
+  kern = gauss_kern(kernsize)
+  alpha = 0.01
+  beta = 1.-alpha
+  cG = beta**G
+  cG = signal.convolve(cG,kern)
+  mg = max(cG.flatten())
+  #logmg = float(np.log(mg))
+  print mg
+
   for i in xrange(0,N):
     ii = float(i)/N
     for j in xrange(0,N):
-      ig = G[i,j]
-      if ig: 
-        rgb = 1.-ig
-        ctx.set_source_rgb(rgb,rgb,rgb)
+      if cG[i,j]: 
+        ig = cG[i,j]**3.
+        #ig = np.log(cG[i,j]) / logmg
+        ctx.set_source_rgb(ig,ig,ig)
         ctx.rectangle(ii,float(j)/N,1./N,1./N)
         ctx.fill()
 
@@ -87,7 +103,7 @@ def main():
   
   GRID = np.zeros((N,N))
   POINTS = []
-  for i in xrange(0,5):
+  for i in xrange(0,9):
     nameroot = 'dots{:04d}'.format(i)
     name     = '{:s}.pkl'.format(nameroot)
     print 'reading {:s} ... '.format(name)
@@ -100,10 +116,10 @@ def main():
     POINTS = []
     print '\tdone'
   
-  print 'drawing ... '
-  sur,ctx = ctxInit()
-  paintGrid(ctx,GRID)
-  sur.write_to_png('./img.01.{:s}.png'.format(nameroot))
+    print 'drawing ... '
+    sur,ctx = ctxInit()
+    paintGrid(ctx,GRID)
+    sur.write_to_png('./img.x2.{:s}.png'.format(nameroot))
 
 if __name__ == '__main__': main()
 
