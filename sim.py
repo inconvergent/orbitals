@@ -10,21 +10,28 @@ from time import time
 import numpy as np
 from matplotlib import pylab as plt
 import pickle as pkl
+from scipy.sparse import lil_matrix
 
 PI     = pi
 PII    = PI*2.
 
-NUM    = 300     # nodes
-MAXFS  = 30      # max friendships pr node
-NEARL  = 0.07    # comfort zone
-FARL   = 0.1     # ignore nodes beyond this distance
-
-GRAINS = 10      # number of grains in sand painting connections
+NUM    = 300      # nodes
+MAXFS  = 30       # max friendships pr node
 
 RAD    = 0.25     # radius of starting circle
 
-STP    = 0.0001  # scale motion in each iteration by this
-steps  = 8000   # iterations
+STP    = 0.0001   # scale motion in each iteration by this
+steps  = 8000     # iterations
+interval = 500
+
+def print_timing(func):
+  def wrapper(*arg):
+    t1=time()
+    res=func(*arg)
+    t2=time()
+    print '%s took %0.3f ms' % (func.func_name, (t2-t1)*1000.0)
+    return res
+  return wrapper
 
 def pInit(X,Y):
   for i in xrange(0,NUM):
@@ -36,6 +43,7 @@ def pInit(X,Y):
 
   return
 
+#@print_timing
 def setDistances(X,Y,R,A):
   for i in xrange(0,NUM):
     dx = X[i] - X
@@ -47,15 +55,16 @@ def setDistances(X,Y,R,A):
 
   return
 
+#@print_timing
 def makeFriends(i,R,F):
-  if sum(F[i]) > MAXFS:
+  if (F[i,:].sum()) > MAXFS:
     return
 
   r = []
   for j in xrange(0,NUM):
-    if i != j and sum(F[j]) < MAXFS\
-      and not F[j][i]:
-        r.append([R[i][j][0],j])
+    if i != j and F[j,:].sum() < MAXFS\
+      and not F[j,i]:
+        r.append([R[i][j],j])
   if not len(r):
     return
   r = sorted(r, key=itemgetter(0))
@@ -66,49 +75,20 @@ def makeFriends(i,R,F):
       index = k
       break
  
-  F[i][r[index][1]] = True
-  F[r[index][1]][i] = True
+  F[i,r[index][1]] = True
+  F[r[index][1],i] = True
 
   return
 
-def getConnectionPoints(X,Y,R,A,F,POINTS):
-  for i in xrange(0,NUM):
-    for j in xrange(i+1,NUM):
-      if not F[i][j]:
-        continue
-
-      a = A[i][j]
-      sx = cos(a)
-      sy = sin(a)
-      
-      d = R[i][j]
-      scale = random()*d/GRAINS
-      if random()<0.5:
-        q = i
-      else:
-        q = j
-        scale *= -1
-
-      xp = X[q][0]
-      yp = Y[q][0]
-      
-      ij = NUM*i + j
-      for q in xrange(0,GRAINS):
-        xp -= sx*scale
-        yp -= sy*scale
-        POINTS.extend([ij,xp,yp])
-
-  return
-
+#@print_timing
 def run(X,Y,SX,SY,R,A,F,NEARL,FARL):
-  t = []
   setDistances(X,Y,R,A)
   
   SX[:] = 0.
   SY[:] = 0.
   
   for i in xrange(0,NUM):
-    xF        = np.logical_not(F[i])
+    xF        = np.logical_not(F[i,:].toarray()).flatten()
     d         = R[i]
     a         = A[i]
     near      = d > NEARL
@@ -134,9 +114,9 @@ def plotIt(X,Y,F):
   #plt.ion() ; plt.figure() # need to run this once on first run.
   plt.clf()
   plt.plot(X,Y,'ro')
-  for k,ff in enumerate(F):
+  for k in xrange(0,NUM):
     for fi in xrange(0,NUM):
-      if ff[fi] and fi > k:
+      if F[k,fi] and fi > k:
         plt.plot([X[k],X[fi]],[Y[k],Y[fi]],'k-')
 
   plt.axis([0,1,0,1])
@@ -155,36 +135,48 @@ def main():
   h = 3
   FARL  = float(farmult) * float(g)
   NEARL = float(nearmult) * float(h)
-  X  = np.zeros((NUM,1))
-  Y  = np.zeros((NUM,1))
-  SX = np.zeros((NUM,1))
-  SY = np.zeros((NUM,1))
-  R  = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-  A  = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
-  F  = [np.zeros((NUM,1),dtype=np.bool) for i in xrange(0,NUM)]
+  X  = np.zeros(NUM)
+  Y  = np.zeros(NUM)
+  SX = np.zeros(NUM)
+  SY = np.zeros(NUM)
+  R  = [np.zeros(NUM,dtype=np.bool) for i in xrange(0,NUM)]
+  A  = [np.zeros(NUM,dtype=np.bool) for i in xrange(0,NUM)]
+  F  = lil_matrix((NUM,NUM),dtype=np.byte).tocsr()
 
   pInit(X,Y)
   
   nc = 0
 
-  POINTS = []
+  STEP = [0]*interval
+  ii = 0
+  #plt.ion() ; plt.figure() # need to run this once on first run.
+  t0 = time()
 
   for i in xrange(0,steps):
     if not i%10:
+      print time()-t0
+      t0 = time()
+      #plotIt(X,Y,F)
       print i
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
-    getConnectionPoints(X,Y,R,A,F,POINTS)
-    if not (i+1) % 500:
+    f = F.copy() 
+    x = X.copy() 
+    y = Y.copy() 
+    STEP[ii] = [x,y,f]
+    ii += 1
+
+    if not (i+1) % interval:
       fname = 'dots{:04d}.pkl'\
         .format(nc)
       print 'writing to {:s} ... '\
         .format(fname)
       f = open(fname,'wb')
-      pkl.dump(POINTS,f)
+      pkl.dump(STEP,f)
       f.close()
       print 'done'
       nc += 1
-      POINTS = []
+      STEP = [0]*interval
+      ii = 0
 
   return
 

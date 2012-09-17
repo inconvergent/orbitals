@@ -59,6 +59,35 @@ def getColors(f):
 
   return res
 
+def getConnectionPoints(X,Y,R,A,F,POINTS):
+  for i in xrange(0,NUM):
+    for j in xrange(i+1,NUM):
+      if not F[i][j]:
+        continue
+
+      a = A[i][j]
+      sx = cos(a)
+      sy = sin(a)
+      
+      d = R[i][j]
+      scale = random()*d/GRAINS
+      if random()<0.5:
+        q = i
+      else:
+        q = j
+        scale *= -1
+
+      xp = X[q][0]
+      yp = Y[q][0]
+      
+      ij = NUM*i + j
+      for q in xrange(0,GRAINS):
+        xp -= sx*scale
+        yp -= sy*scale
+        POINTS.extend([ij,xp,yp])
+
+  return
+
 def countGrid(G,P):
   n = len(P)/3
   for k in xrange(0,n):
@@ -77,12 +106,12 @@ def gauss_kern(size):
     return g / g.sum()
 
 def paintGrid(ctx,G):
-  kernsize = 3
-  kern = gauss_kern(kernsize)
+  #kernsize = 3
+  #kern = gauss_kern(kernsize)
   alpha = 0.01
   beta = 1.-alpha
   cG = beta**G
-  cG = signal.convolve(cG,kern)
+  #cG = signal.convolve(cG,kern)
   mg = max(cG.flatten())
   #logmg = float(np.log(mg))
   print mg
@@ -91,8 +120,7 @@ def paintGrid(ctx,G):
     ii = float(i)/N
     for j in xrange(0,N):
       if cG[i,j]: 
-        ig = cG[i,j]**3.
-        #ig = np.log(cG[i,j]) / logmg
+        ig = cG[i,j]**2. # I**(1/gamma) = I**2
         ctx.set_source_rgb(ig,ig,ig)
         ctx.rectangle(ii,float(j)/N,1./N,1./N)
         ctx.fill()
