@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 #
 
-import os,sys,cairo,Image
 from math import log, sin, cos, pi, atan2, sqrt
 from random import random
 from operator import itemgetter
@@ -21,7 +20,7 @@ MAXFS  = 30       # max friendships pr node
 RAD    = 0.25     # radius of starting circle
 
 STP    = 0.0001   # scale motion in each iteration by this
-steps  = 8000     # iterations
+steps  = 4000     # iterations
 interval = 500
 
 def print_timing(func):
@@ -129,12 +128,8 @@ def plotIt(X,Y,F):
 
 def main():
 
-  farmult =  0.05
-  nearmult = 0.02
-  g = 3
-  h = 3
-  FARL  = float(farmult) * float(g)
-  NEARL = float(nearmult) * float(h)
+  FARL  = 0.2
+  NEARL = 0.02
   X  = np.zeros(NUM)
   Y  = np.zeros(NUM)
   SX = np.zeros(NUM)
@@ -154,10 +149,9 @@ def main():
 
   for i in xrange(0,steps):
     if not i%10:
-      print time()-t0
+      print i,time()-t0
       t0 = time()
       #plotIt(X,Y,F)
-      print i
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     f = F.copy() 
     x = X.copy() 

@@ -1,16 +1,33 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from sys import path
-path.append('./') # kinda bad
+import cairo,Image
+from math import log, sin, cos, pi, atan2, sqrt
+from random import random
+from operator import itemgetter
+from time import time
+import numpy as np
+import pickle as pkl
+from scipy.sparse import lil_matrix
 
-from scipy import signal
-from sim import *
+PI     = pi
+PII    = PI*2.
 
-N      = 10000   # size of png image
-BACK   = 1.     # background color 
-OUT    = 'large.img'  # resulting image name
+N      = 10000        # size of png image
+NUM    = 300          # number of nodes
+BACK   = 1.           # background color 
+OUT    = 'x05.img'    # resulting image name
+IN     = './001run0.02x0.2/dots'
 GRAINS = 1000
+
+def print_timing(func):
+  def wrapper(*arg):
+    t1=time()
+    res=func(*arg)
+    t2=time()
+    print '%s:\t%0.3f' % (func.func_name, (t2-t1)*1000.0)
+    return res
+  return wrapper
 
 def ctxInit():
   sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
@@ -21,13 +38,12 @@ def ctxInit():
   ctx.fill()
   return sur,ctx
 
-def showP(ctx,X,Y):
-  ctx.set_source_rgba(1,0,0,0.5)
+def setDistances(X,Y,R,A):
   for i in xrange(0,NUM):
-    ctx.move_to(X[i],Y[i])
-    ctx.arc(X[i],Y[i],2./N,0,PII)
-  ctx.close_path()
-  ctx.fill()
+    dx = X[i] - X
+    dy = Y[i] - Y
+    R[i,:] = np.sqrt(dx*dx+dy*dy)
+    A[i,:] = np.arctan2(dy,dx)
 
   return
 
@@ -47,65 +63,44 @@ def getColors(f):
 
   return res
 
-def getConnectionPoints(X,Y,R,A,F,GRID):
-
+#@print_timing
+def renderConnectionPoints(X,Y,R,A,F,ctx):
+  alpha = 15./256.
+  colors = getColors('./resources/colors2.gif')
+  lc = len(colors)
   for i in xrange(0,NUM):
     for j in xrange(i+1,NUM):
-      if not F[i,j]:
-        continue
+      if F[i,j]:
+        a = A[i,j] ; d = R[i,j]
 
-      a = A[i][j]
-      sx = cos(a)
-      sy = sin(a)
+        scales = np.random.random(GRAINS)*d
+        xp = X[i] - scales*np.cos(a)
+        yp = Y[i] - scales*np.sin(a)
       
-      d = R[i][j]
-      scale = random()*d/GRAINS
-      if random()<0.5:
-        q = i
-      else:
-        q = j
-        scale *= -1
-
-      xp = X[q]
-      yp = Y[q]
-      
-      ij = NUM*i + j
-      for q in xrange(0,GRAINS):
-        xp -= sx*scale
-        yp -= sy*scale
-        GRID[int(xp*N),int(yp*N)] += 1
-
-  return
-
-@print_timing
-def paintGrid(ctx,G):
-  alpha = 0.005
-  beta = 1.-alpha
-  cG = beta**G
-  cG = cG**2. # gamma
-
-  for i in xrange(0,N):
-    ii = float(i)/N
-    for j in xrange(0,N):
-      if G[i,j]: 
-        ig = cG[i,j]
-        ctx.set_source_rgb(ig,ig,ig)
-        ctx.rectangle(ii,float(j)/N,1./N,1./N)
+        c = colors[ (i*NUM+j) % lc ]
+        ctx.set_source_rgba(c[0],c[1],c[2],alpha)
+        for q in xrange(0,GRAINS):
+          ctx.rectangle(xp[q],yp[q],1./N,1./N)
         ctx.fill()
 
   return
 
 @print_timing
-def renderSteps(STEP,GRID):
+def renderSteps(STEP,GRID,batch,ctx,sur):
 
   stps = len(STEP)
-  r = [np.zeros(NUM,dtype=np.bool) for i in xrange(0,NUM)]
-  a = [np.zeros(NUM,dtype=np.bool) for i in xrange(0,NUM)]
-  
+  r = np.zeros((NUM,NUM))
+  a = np.zeros((NUM,NUM))
+   
   for i in xrange(0,stps):
     x,y,f = STEP[i]
     setDistances(x,y,r,a)
-    getConnectionPoints(x,y,r,a,f,GRID)
+    renderConnectionPoints(x,y,r,a,f,ctx)
+    if not (i+1) % 100:
+      s = '{:s}.{:03d}.{:03d}.png'\
+          .format(OUT,batch,i)
+      sur.write_to_png(s)
+      print i, s
 
   return
 
@@ -115,52 +110,20 @@ def main():
 
   GRID = np.zeros((N,N))
   for i in xrange(0,5):
-    nameroot = 'dots{:04d}'.format(i)
+    nameroot = '{:s}{:04d}'.format(IN,i)
     name     = '{:s}.pkl'.format(nameroot)
     print 'reading {:s} ... '.format(name)
     f = open(name,'rb')
     STEP = pkl.load(f)
     print 'opened ... {:d} entries'.format(len(STEP))
     f.close()
-    renderSteps(STEP,GRID)
-    paintGrid(ctx,GRID)
+    renderSteps(STEP,GRID,i,ctx,sur)
 
-    sur.write_to_png('{:s}.{:03d}.png'.format(OUT,i))
+    #paintGrid(ctx,GRID)
+    #sur.write_to_png('{:s}.{:03d}.png'.format(OUT,i))
 
   return
 
 
 if __name__ == '__main__': main()
-
-#def countGrid(G,P):
-  #n = len(P)/3
-  #for k in xrange(0,n):
-    #k3 = k*3
-    #x = int(N*P[k3+1])
-    #y = int(N*P[k3+2])
-    #if x < N and y < N:
-      #G[x,y] += 1
-  #return
-
-#def gauss_kern(size):
-    #size = int(size)        
-    #x, y = np.mgrid[-size:size+1, -size:size+1]
-    #g = np.exp(-(x**2/float(size)+y**2/float(size)))
-
-    #return g / g.sum()
-
-#def paintIt(ctx,POINTS,colors,opa=0.2):
-  #n = len(POINTS)/3
-  #print 'elements:\t{:d}'.format(n)
-  #ncolors = len(colors)
-  #for k in xrange(0,n):
-    #k3 = k*3
-    #ij = POINTS[k3]
-    #rgb = colors[ij % ncolors]
-    #ctx.set_source_rgba(rgb[0],rgb[1],rgb[2],opa)
-    #ctx.rectangle(POINTS[k3+1],POINTS[k3+2],1./N,1./N)
-    #ctx.fill()
-
-  #return
-
 
