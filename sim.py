@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 #
 
-import os,sys,cairo,Image
 from math import log, sin, cos, pi, atan2, sqrt
 from random import random
 from operator import itemgetter
