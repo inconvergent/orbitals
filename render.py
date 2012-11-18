@@ -14,10 +14,10 @@ PI     = pi
 PII    = PI*2.
 
 N      = 10000        # size of png image
-NUM    = 300          # number of nodes
+NUM    = 800          # number of nodes
 BACK   = 1.           # background color 
-OUT    = 'x05.img'    # resulting image name
-IN     = './001run0.02x0.2/dots'
+OUT    = 'x07.img'    # resulting image name
+IN     = './dots'
 GRAINS = 1000
 
 def print_timing(func):
@@ -63,29 +63,35 @@ def getColors(f):
 
   return res
 
-#@print_timing
 def renderConnectionPoints(X,Y,R,A,F,ctx):
+  def stroke(x,y):
+      ctx.rectangle(x,y,1./N,1./N)
+      ctx.fill()
+      return
+  vstroke = np.vectorize(stroke)
+
   alpha = 15./256.
   colors = getColors('./resources/colors2.gif')
-  lc = len(colors)
-  for i in xrange(0,NUM):
-    for j in xrange(i+1,NUM):
-      if F[i,j]:
-        a = A[i,j] ; d = R[i,j]
 
-        scales = np.random.random(GRAINS)*d
-        xp = X[i] - scales*np.cos(a)
-        yp = Y[i] - scales*np.sin(a)
-      
-        c = colors[ (i*NUM+j) % lc ]
-        ctx.set_source_rgba(c[0],c[1],c[2],alpha)
-        for q in xrange(0,GRAINS):
-          ctx.rectangle(xp[q],yp[q],1./N,1./N)
-        ctx.fill()
+  lc = len(colors)
+  t = time()
+  indsx,indsy = F.nonzero()
+  mask = indsx >= indsy 
+  for i,j in zip(indsx[mask],indsy[mask]):
+    a = A[i,j] ; d = R[i,j]
+
+    scales = np.random.random(GRAINS)*d
+    xp = X[i] - scales*np.cos(a)
+    yp = Y[i] - scales*np.sin(a)
+    
+    c = colors[ (i*NUM+j) % lc ]
+    ctx.set_source_rgba(c[0],c[1],c[2],alpha)
+    vstroke(xp,yp)
+
+  print time()-t 
 
   return
 
-@print_timing
 def renderSteps(STEP,GRID,batch,ctx,sur):
 
   stps = len(STEP)

@@ -14,13 +14,14 @@ from scipy.sparse import lil_matrix
 PI     = pi
 PII    = PI*2.
 
-NUM    = 300      # nodes
-MAXFS  = 30       # max friendships pr node
+NUM    = 800      # nodes
+MAXFS  = 100       # max friendships pr node
 
-RAD    = 0.25     # radius of starting circle
+RAD    = 0.4      # radius of starting circle
+OUT    = './003run0.02x0.2/'
 
 STP    = 0.0001   # scale motion in each iteration by this
-steps  = 4000     # iterations
+steps  = 3000     # iterations
 interval = 500
 
 def print_timing(func):
@@ -160,8 +161,8 @@ def main():
     ii += 1
 
     if not (i+1) % interval:
-      fname = 'dots{:04d}.pkl'\
-        .format(nc)
+      fname = '{:s}dots{:04d}.pkl'\
+        .format(OUT,nc)
       print 'writing to {:s} ... '\
         .format(fname)
       f = open(fname,'wb')
