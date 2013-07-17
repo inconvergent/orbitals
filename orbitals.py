@@ -23,23 +23,24 @@ def main():
   PI     = pi
   PII    = PI*2.
 
-  N      = 4000               # size of png image
-  NUM    = 400                # number of nodes
+  N      = 2000               # size of png image
+  NUM    = 200                # number of nodes
   BACK   = 1.                 # background color 
-  OUT    = 'orbitals.color.4' # resulting image name
-  RAD    = 0.265              # radius of starting circle
-  GRAINS = 100
+  OUT    = 'img.f' # resulting image name
+  RAD    = 0.26               # radius of starting circle
+  GRAINS = 50
   STP    = 0.0001             # scale motion in each iteration by this
   steps  = 500000             # iterations
-  MAXFS  = 150                # max friendships pr node
+  MAXFS  = 100                # max friendships pr node
   ALPHA  = 0.05
 
 
   def pInit(X,Y):
     for i in xrange(NUM):
       the = random()*PII
-      x = RAD * sin(the)
-      y = RAD * cos(the)
+      r = RAD * random()
+      x = r * sin(the)
+      y = r * cos(the)
       X[i] = 0.5+x
       Y[i] = 0.5+y
     return
@@ -157,7 +158,7 @@ def main():
 
     X += SX*STP
     Y += SY*STP
-    if random()<0.3:
+    if random()<0.15:
       makeFriends(int(random()*NUM),R,F)
     t = time()
 
@@ -175,18 +176,18 @@ def main():
   A  = zeros((NUM,NUM),      dtype=float)
   F  = csr_matrix((NUM,NUM), dtype=byte)
 
-  #colors = [(0.,0.,0.)]
-  colors = get_colors('../city/color/color_purple.gif')
+  colors = get_colors('./color/bath.gif')
 
   pInit(X,Y)
   
+  t = time()
   for i in xrange(steps):
-    t = time()
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     render_connection_points(X,Y,R,A,F,ctx,colors)
-    if not (i+1)%1000:
+    if not (i+1)%500:
       sur.write_to_png('{:s}.{:d}.png'.format(OUT,i+1))
-    print i,time()-t
+      print i,time()-t
+      t = time()
 
   return
 
