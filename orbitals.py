@@ -24,25 +24,35 @@ def main():
   PII    = PI*2.
 
   N      = 2000               # size of png image
-  NUM    = 200                # number of nodes
+  NUM    = 150                # number of nodes
   BACK   = 1.                 # background color 
-  OUT    = 'img.f' # resulting image name
-  RAD    = 0.26               # radius of starting circle
-  GRAINS = 50
+  OUT    = 'img.line.cos' # resulting image name
+  RAD    = 0.2               # radius of starting circle
+  GRAINS = 40
   STP    = 0.0001             # scale motion in each iteration by this
   steps  = 500000             # iterations
-  MAXFS  = 100                # max friendships pr node
+  MAXFS  = 80                # max friendships pr node
   ALPHA  = 0.05
 
+  FARL  = 0.17
+  NEARL = 0.05
 
   def pInit(X,Y):
-    for i in xrange(NUM):
-      the = random()*PII
-      r = RAD * random()
-      x = r * sin(the)
-      y = r * cos(the)
-      X[i] = 0.5+x
-      Y[i] = 0.5+y
+    ## line
+    #X[:NUM] = 0.3 + random((NUM,)) * 0.4
+    #Y[:NUM] = 0.5 + (1.-2.*random((NUM,))) *0.05
+
+    the = random((NUM,))
+
+    X[:NUM] = 0.5 + cos(the*pi*2.) * 0.27
+    Y[:NUM] = 0.5 + sin(the*pi*2.) * 0.15
+  
+    ## sine
+    #X[:NUM] = 0.2 + the * 0.6
+    #Y[:NUM] = 0.5 + sin(the*pi*2.) * 0.1
+
+
+    #Y[:NUM] = 0.5 + (1.-2.*random((NUM,))) *0.05
     return
 
 
@@ -50,7 +60,7 @@ def main():
     sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
     ctx = cairo.Context(sur)
     ctx.scale(N,N)
-    ctx.set_source_rgb(BACK,BACK,BACK)
+    ctx.set_source_rgba(BACK,BACK,BACK,0.)
     ctx.rectangle(0,0,1,1)
     ctx.fill()
     return sur,ctx
@@ -156,8 +166,12 @@ def main():
       SY[far]  -= speed*sin(a[far])
     t = time()
 
-    X += SX*STP
-    Y += SY*STP
+    #fuzz = random(SX.shape)*pi*2.
+    #fuzzx = cos(fuzz)
+    #fuzzy = sin(fuzz)
+
+    X += ( SX ) * STP
+    Y += ( SY ) * STP
     if random()<0.15:
       makeFriends(int(random()*NUM),R,F)
     t = time()
@@ -166,8 +180,6 @@ def main():
 
   sur,ctx = ctx_init()
 
-  FARL  = 0.17
-  NEARL = 0.02
   X  = zeros(NUM,            dtype=float)
   Y  = zeros(NUM,            dtype=float)
   SX = zeros(NUM,            dtype=float)
@@ -176,7 +188,8 @@ def main():
   A  = zeros((NUM,NUM),      dtype=float)
   F  = csr_matrix((NUM,NUM), dtype=byte)
 
-  colors = get_colors('./color/bath.gif')
+  colors = get_colors('./color/starwars_red2.gif')
+  #colors = get_colors('./color/starwars_red.gif')
 
   pInit(X,Y)
   
