@@ -12,6 +12,7 @@ def main():
   cos         = np.cos
   pi          = np.pi
   sqrt        = np.sqrt
+  square      = np.square
   arctan2     = np.arctan2
   logical_not = np.logical_not
   float       = np.float
@@ -23,19 +24,21 @@ def main():
   PI     = pi
   PII    = PI*2.
 
-  N      = 2000               # size of png image
-  NUM    = 150                # number of nodes
+  N      = 21000               # size of png image
+  NUM    = 500                # number of nodes
   BACK   = 1.                 # background color 
-  OUT    = 'img.line.cos' # resulting image name
+  OUT    = '/data/orbitals.x/einjen.2.orbitals' # resulting image name
   RAD    = 0.2               # radius of starting circle
-  GRAINS = 40
-  STP    = 0.0001             # scale motion in each iteration by this
+  GRAINS = 30
+  STP    = 0.000005             # scale motion in each iteration by this
   steps  = 500000             # iterations
-  MAXFS  = 80                # max friendships pr node
+  MAXFS  = 50                # max friendships pr node
   ALPHA  = 0.05
 
-  FARL  = 0.17
-  NEARL = 0.05
+  FARL  = 0.15
+  NEARL = 0.02
+
+  leap = 1000
 
   def pInit(X,Y):
     ## line
@@ -44,12 +47,12 @@ def main():
 
     the = random((NUM,))
 
-    X[:NUM] = 0.5 + cos(the*pi*2.) * 0.27
-    Y[:NUM] = 0.5 + sin(the*pi*2.) * 0.15
+    #X[:NUM] = 0.5 + cos(the*pi*2.) * 0.27
+    #Y[:NUM] = 0.5 + sin(the*pi*2.) * 0.15
   
     ## sine
-    #X[:NUM] = 0.2 + the * 0.6
-    #Y[:NUM] = 0.5 + sin(the*pi*2.) * 0.1
+    X[:NUM] = 0.20 + the * 0.6
+    Y[:NUM] = 0.5 + sin(the*pi*2.) * 0.1
 
 
     #Y[:NUM] = 0.5 + (1.-2.*random((NUM,))) *0.05
@@ -61,6 +64,7 @@ def main():
     ctx = cairo.Context(sur)
     ctx.scale(N,N)
     ctx.set_source_rgba(BACK,BACK,BACK,0.)
+    #ctx.set_source_rgb(BACK,BACK,BACK)
     ctx.rectangle(0,0,1,1)
     ctx.fill()
     return sur,ctx
@@ -110,6 +114,8 @@ def main():
         index = k
         break
 
+    #index = (sqrt(random())*index).astype(int)
+
     # this is bad for csc, csr matrix 
     F[i,r[index][1]] = True
     F[r[index][1],i] = True
@@ -133,8 +139,13 @@ def main():
       scales = random(GRAINS)*d
       xp = X[i] - scales*cos(a)
       yp = Y[i] - scales*sin(a)
+
+      #fuzz = random(xp.shape)*pi*2.
+      #fuzzx = cos(fuzz) * STP
+      #fuzzy = sin(fuzz) * STP
       
       c = colors[ (i*NUM+j) % lc ]
+
       ctx.set_source_rgba(c[0],c[1],c[2],alpha)
 
       vstroke(xp,yp)
@@ -146,7 +157,8 @@ def main():
     set_distances(X,Y,R,A)
     t = time()
     
-    SX[:] = 0.; SY[:] = 0.
+    SX[:] = 0.
+    SY[:] = 0.
     
     for i in xrange(NUM):
       xF        = logical_not(F[i,:].toarray()).flatten()
@@ -166,13 +178,9 @@ def main():
       SY[far]  -= speed*sin(a[far])
     t = time()
 
-    #fuzz = random(SX.shape)*pi*2.
-    #fuzzx = cos(fuzz)
-    #fuzzy = sin(fuzz)
-
-    X += ( SX ) * STP
-    Y += ( SY ) * STP
-    if random()<0.15:
+    X += SX * STP
+    Y += SY * STP
+    if random()<0.05:
       makeFriends(int(random()*NUM),R,F)
     t = time()
 
@@ -188,6 +196,7 @@ def main():
   A  = zeros((NUM,NUM),      dtype=float)
   F  = csr_matrix((NUM,NUM), dtype=byte)
 
+  #colors = get_colors('./color/color_coffee.gif')
   colors = get_colors('./color/starwars_red2.gif')
   #colors = get_colors('./color/starwars_red.gif')
 
@@ -197,7 +206,7 @@ def main():
   for i in xrange(steps):
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     render_connection_points(X,Y,R,A,F,ctx,colors)
-    if not (i+1)%500:
+    if not (i+1)%leap:
       sur.write_to_png('{:s}.{:d}.png'.format(OUT,i+1))
       print i,time()-t
       t = time()
