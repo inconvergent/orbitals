@@ -27,15 +27,15 @@ def main():
   N      = 21000               # size of png image
   NUM    = 500                # number of nodes
   BACK   = 1.                 # background color 
-  OUT    = '/data/orbitals.x/einjen.2.orbitals' # resulting image name
+  OUT    = '/data/orbitals.x/einjen.4.orbitals' # resulting image name
   RAD    = 0.2               # radius of starting circle
-  GRAINS = 30
+  GRAINS = 35
   STP    = 0.000005             # scale motion in each iteration by this
   steps  = 500000             # iterations
-  MAXFS  = 50                # max friendships pr node
+  MAXFS  = 80                # max friendships pr node
   ALPHA  = 0.05
 
-  FARL  = 0.15
+  FARL  = 0.10
   NEARL = 0.02
 
   leap = 1000
@@ -52,7 +52,7 @@ def main():
   
     ## sine
     X[:NUM] = 0.20 + the * 0.6
-    Y[:NUM] = 0.5 + sin(the*pi*2.) * 0.1
+    Y[:NUM] = 0.5 + sin(the*pi*2.) * 0.08
 
 
     #Y[:NUM] = 0.5 + (1.-2.*random((NUM,))) *0.05
