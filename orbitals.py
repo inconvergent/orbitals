@@ -23,27 +23,41 @@ def main():
   PI     = pi
   PII    = PI*2.
 
-  N      = 2000               # size of png image
-  NUM    = 200                # number of nodes
-  BACK   = 1.                 # background color 
-  OUT    = 'img.f' # resulting image name
-  RAD    = 0.26               # radius of starting circle
+  N      = 7000
+  NUM    = 600
+  BACK   = 1.
+  OUT    = '/data/orbitals.kunstplass/orbitals.j'
+  RAD    = 0.26
   GRAINS = 50
-  STP    = 0.0001             # scale motion in each iteration by this
-  steps  = 500000             # iterations
-  MAXFS  = 100                # max friendships pr node
+  STP    = 0.00002
+  steps  = 500000
+  MAXFS  = 120
   ALPHA  = 0.05
 
-
   def pInit(X,Y):
-    for i in xrange(NUM):
-      the = random()*PII
-      r = RAD * random()
-      x = r * sin(the)
-      y = r * cos(the)
-      X[i] = 0.5+x
-      Y[i] = 0.5+y
-    return
+    bridge = zeros(NUM)
+    bridge[:NUM/2] = np.random.normal(size=NUM/2)*0.002
+    bridge[NUM/2:] = -bridge[:NUM/2]
+    np.random.shuffle(bridge)
+    bridge[:] = 0.2 + np.cumsum(bridge[:])
+
+    theta = np.arange(NUM,dtype=np.float) / NUM * PII
+
+    for v in xrange(NUM):
+      t = theta[v]
+      X[v] = 0.5 + cos(t)*bridge[v]
+      Y[v] = 0.5 + sin(t)*bridge[v]
+
+
+  #def pInit(X,Y):
+
+    #for i in xrange(NUM):
+      #the = random()*PII
+      #r = RAD
+      #x = r * sin(the)
+      #y = r * cos(the)
+      #X[i] = 0.5+x
+      #Y[i] = 0.5+y
 
 
   def ctx_init():
@@ -158,7 +172,7 @@ def main():
 
     X += SX*STP
     Y += SY*STP
-    if random()<0.15:
+    if random()<0.05:
       makeFriends(int(random()*NUM),R,F)
     t = time()
 
@@ -167,16 +181,16 @@ def main():
   sur,ctx = ctx_init()
 
   FARL  = 0.17
-  NEARL = 0.02
-  X  = zeros(NUM,            dtype=float)
-  Y  = zeros(NUM,            dtype=float)
-  SX = zeros(NUM,            dtype=float)
-  SY = zeros(NUM,            dtype=float)
-  R  = zeros((NUM,NUM),      dtype=float)
-  A  = zeros((NUM,NUM),      dtype=float)
+  NEARL = 0.010
+  X  = zeros(NUM, dtype=float)
+  Y  = zeros(NUM, dtype=float)
+  SX = zeros(NUM, dtype=float)
+  SY = zeros(NUM, dtype=float)
+  R  = zeros((NUM,NUM), dtype=float)
+  A  = zeros((NUM,NUM), dtype=float)
   F  = csr_matrix((NUM,NUM), dtype=byte)
 
-  colors = get_colors('./color/bath.gif')
+  colors = get_colors('./color/color_coffee_black.gif')
 
   pInit(X,Y)
   
@@ -185,7 +199,7 @@ def main():
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     render_connection_points(X,Y,R,A,F,ctx,colors)
     if not (i+1)%500:
-      sur.write_to_png('{:s}.{:d}.png'.format(OUT,i+1))
+      sur.write_to_png('{:s}.{:05d}.png'.format(OUT,i+1))
       print i,time()-t
       t = time()
 
