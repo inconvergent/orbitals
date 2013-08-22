@@ -26,12 +26,12 @@ def main():
   N      = 7000
   NUM    = 600
   BACK   = 1.
-  OUT    = '/data/orbitals.kunstplass/orbitals.j'
+  OUT    = '/data/orbitals.kunstplass/orbitals.cc'
   RAD    = 0.26
-  GRAINS = 50
+  GRAINS = 30
   STP    = 0.00002
   steps  = 500000
-  MAXFS  = 120
+  MAXFS  = 500
   ALPHA  = 0.05
 
   def pInit(X,Y):
@@ -39,7 +39,7 @@ def main():
     bridge[:NUM/2] = np.random.normal(size=NUM/2)*0.002
     bridge[NUM/2:] = -bridge[:NUM/2]
     np.random.shuffle(bridge)
-    bridge[:] = 0.2 + np.cumsum(bridge[:])
+    bridge[:] = 0.15 + np.cumsum(bridge[:])
 
     theta = np.arange(NUM,dtype=np.float) / NUM * PII
 
@@ -150,7 +150,8 @@ def main():
     set_distances(X,Y,R,A)
     t = time()
     
-    SX[:] = 0.; SY[:] = 0.
+    SX[:] = 0.
+    SY[:] = 0.
     
     for i in xrange(NUM):
       xF        = logical_not(F[i,:].toarray()).flatten()
@@ -180,8 +181,8 @@ def main():
 
   sur,ctx = ctx_init()
 
-  FARL  = 0.17
-  NEARL = 0.010
+  FARL  = 0.11
+  NEARL = 0.01
   X  = zeros(NUM, dtype=float)
   Y  = zeros(NUM, dtype=float)
   SX = zeros(NUM, dtype=float)
@@ -190,7 +191,7 @@ def main():
   A  = zeros((NUM,NUM), dtype=float)
   F  = csr_matrix((NUM,NUM), dtype=byte)
 
-  colors = get_colors('./color/color_coffee_black.gif')
+  colors = get_colors('./color/color_flyby2.gif')
 
   pInit(X,Y)
   
@@ -198,8 +199,8 @@ def main():
   for i in xrange(steps):
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     render_connection_points(X,Y,R,A,F,ctx,colors)
-    if not (i+1)%500:
-      sur.write_to_png('{:s}.{:05d}.png'.format(OUT,i+1))
+    if not (i+1)%1000:
+      sur.write_to_png('{:s}.{:06d}.png'.format(OUT,i+1))
       print i,time()-t
       t = time()
 
