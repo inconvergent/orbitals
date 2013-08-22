@@ -26,7 +26,7 @@ def main():
   N      = 7000
   NUM    = 600
   BACK   = 1.
-  OUT    = '/data/orbitals.kunstplass/orbitals.cc'
+  OUT    = '/data/orbitals.kunstplass/orbitals.dd'
   RAD    = 0.26
   GRAINS = 30
   STP    = 0.00002
@@ -181,8 +181,8 @@ def main():
 
   sur,ctx = ctx_init()
 
-  FARL  = 0.11
-  NEARL = 0.01
+  FARL  = 0.05
+  NEARL = 0.02
   X  = zeros(NUM, dtype=float)
   Y  = zeros(NUM, dtype=float)
   SX = zeros(NUM, dtype=float)
@@ -206,5 +206,17 @@ def main():
 
   return
 
-if __name__ == '__main__' : main()
+
+if __name__ == '__main__' :
+
+  if True:
+    import pstats
+    import cProfile
+    OUT = 'profile'
+    pfilename = '{:s}.profile'.format(OUT)
+    cProfile.run('main()',pfilename)
+    p = pstats.Stats(pfilename)
+    p.strip_dirs().sort_stats('cumulative').print_stats()
+  else:
+    main()
 
