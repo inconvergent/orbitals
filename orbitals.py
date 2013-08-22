@@ -6,7 +6,6 @@ def main():
   from operator import itemgetter
   from time import time
   import numpy as np
-  from scipy.sparse import csr_matrix,lil_matrix,csc_matrix
 
   sin         = np.sin
   cos         = np.cos
@@ -26,7 +25,7 @@ def main():
   N      = 7000
   NUM    = 600
   BACK   = 1.
-  OUT    = '/data/orbitals.kunstplass/orbitals.dd'
+  OUT    = '/data/orbitals.kunstplass/orbitals.nonsparse'
   RAD    = 0.26
   GRAINS = 30
   STP    = 0.00002
@@ -96,12 +95,12 @@ def main():
 
   def makeFriends(i,R,F):
     
-    if F[i,:].nnz > MAXFS:
+    if F[i,:].sum() > MAXFS:
       return
 
     r = []
     for j in xrange(NUM):
-      if i != j and F[j,:].nnz < MAXFS\
+      if i!=j and F[j,:].sum() < MAXFS\
         and not F[j,i]:
           r.append((R[i,j],j))
     if not len(r):
@@ -114,7 +113,6 @@ def main():
         index = k
         break
 
-    # this is bad for csc, csr matrix 
     F[i,r[index][1]] = True
     F[r[index][1],i] = True
     return
@@ -128,11 +126,11 @@ def main():
 
 
     lc = len(colors)
-    t = time()
     indsx,indsy = F.nonzero()
     mask = indsx >= indsy 
     for i,j in zip(indsx[mask],indsy[mask]):
-      a = A[i,j] ; d = R[i,j]
+      a = A[i,j]
+      d = R[i,j]
 
       scales = random(GRAINS)*d
       xp = X[i] - scales*cos(a)
@@ -146,15 +144,13 @@ def main():
 
   def run(X,Y,SX,SY,R,A,F,NEARL,FARL):
 
-    t = time()
     set_distances(X,Y,R,A)
-    t = time()
     
     SX[:] = 0.
     SY[:] = 0.
     
     for i in xrange(NUM):
-      xF        = logical_not(F[i,:].toarray()).flatten()
+      xF        = logical_not(F[i,:])
       d         = R[i,:]
       a         = A[i,:]
       near      = d > NEARL
@@ -169,13 +165,11 @@ def main():
       SY[near] += sin(a[near])
       SX[far]  -= speed*cos(a[far])
       SY[far]  -= speed*sin(a[far])
-    t = time()
 
     X += SX*STP
     Y += SY*STP
     if random()<0.05:
       makeFriends(int(random()*NUM),R,F)
-    t = time()
 
     return
 
@@ -189,7 +183,8 @@ def main():
   SY = zeros(NUM, dtype=float)
   R  = zeros((NUM,NUM), dtype=float)
   A  = zeros((NUM,NUM), dtype=float)
-  F  = csr_matrix((NUM,NUM), dtype=byte)
+  F  = zeros((NUM,NUM), dtype=bool)
+
 
   colors = get_colors('./color/color_flyby2.gif')
 
