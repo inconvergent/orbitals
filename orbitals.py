@@ -8,20 +8,22 @@ from operator import itemgetter
 from time import time
 import numpy as np
 
+import matplotlib.pyplot as plt
 
 
 PI     = pi
 PII    = PI*2.
 
-N      = 10000       # size of png image
-NUM    = 450          # number of nodes
+N      = 500       # size of png image
+ONE    = 1./float(N)
+NUM    = 50          # number of nodes
 BACK   = 1.           # background color 
-OUT    = 'b01'    # resulting image name
-RAD    = 0.2      # radius of starting circle
+OUT    = 'orbitals.tmp.a'    # resulting image name
+RAD    = 0.4      # radius of starting circle
 GRAINS = 300
-STP    = 0.0001   # scale motion in each iteration by this
+STP    = 0.001   # scale motion in each iteration by this
 steps  = 3000     # iterations
-MAXFS  = 80       # max friendships pr node
+MAXFS  = 5       # max friendships pr node
 ALPHA  = 0.05
 
 def pInit(X,Y):
@@ -138,8 +140,8 @@ def run(X,Y,SX,SY,R,A,F,NEARL,FARL):
     SX[far]  -= speed*np.cos(a[far])
     SY[far]  -= speed*np.sin(a[far])
 
-  X += SX*STP
-  Y += SY*STP
+  X += SX*STP + (1-2*np.random.random(X.shape))*ONE
+  Y += SY*STP + (1-2*np.random.random(Y.shape))*ONE
   makeFriends(int(random()*NUM),R,F)
 
   return
@@ -149,7 +151,7 @@ def main():
   sur,ctx = ctxInit()
 
   FARL  = 0.15
-  NEARL = 0.02
+  NEARL = 0.1
   X  = np.zeros(NUM,        dtype=np.float)
   Y  = np.zeros(NUM,        dtype=np.float)
   SX = np.zeros(NUM,        dtype=np.float)
@@ -162,14 +164,26 @@ def main():
   colors = [(0.,0.,0.)]
 
   pInit(X,Y)
-  
+ 
+  plt.ion()
+  plt.figure()
+
+  t = 0
   for i in xrange(steps):
-    t = time()
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
-    renderConnectionPoints(X,Y,R,A,F,ctx,colors)
-    if not (i+1)%200:
-      sur.write_to_png('{:s}.{:d}.png'.format(OUT,i+1))
-    print time()-t
+    #renderConnectionPoints(X,Y,R,A,F,ctx,colors)
+
+    if not i%20:
+      plt.clf()
+      plt.plot(X,Y,'ro')
+      plt.xlim([0,1])
+      plt.ylim([0,1])
+      plt.draw()
+      print time()-t
+      t = time()
+
+    #if not (i+1)%200:
+      #sur.write_to_png('{:s}.{:d}.png'.format(OUT,i+1))
   return
 
 if __name__ == '__main__' : main()
