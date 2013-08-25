@@ -23,15 +23,15 @@ def main():
   PI     = pi
   PII    = PI*2.
 
-  N      = 7000
-  NUM    = 600
+  N      = 20000
+  NUM    = 1000
   BACK   = 1.
-  OUT    = '/data/orbitals.kunstplass/orbitals.cc'
+  OUT    = '/data/orbitals.kunstplass/orbitals.oo'
   RAD    = 0.26
-  GRAINS = 30
-  STP    = 0.00002
+  GRAINS = 45
+  STP    = 0.000001
   steps  = 500000
-  MAXFS  = 500
+  MAXFS  = 10
   ALPHA  = 0.05
 
   def pInit(X,Y):
@@ -96,12 +96,12 @@ def main():
 
   def makeFriends(i,R,F):
     
-    if F[i,:].nnz > MAXFS:
+    if F[i,:].sum() > MAXFS:
       return
 
     r = []
     for j in xrange(NUM):
-      if i != j and F[j,:].nnz < MAXFS\
+      if i != j and F[j,:].sum() < MAXFS\
         and not F[j,i]:
           r.append((R[i,j],j))
     if not len(r):
@@ -115,8 +115,8 @@ def main():
         break
 
     # this is bad for csc, csr matrix 
-    F[i,r[index][1]] = True
-    F[r[index][1],i] = True
+    F[i,r[index][1]] = 1
+    F[r[index][1],i] = 1
     return
 
   def render_connection_points(X,Y,R,A,F,ctx,colors,alpha=ALPHA):
@@ -154,7 +154,7 @@ def main():
     SY[:] = 0.
     
     for i in xrange(NUM):
-      xF        = logical_not(F[i,:].toarray()).flatten()
+      xF        = logical_not(F[i,:])
       d         = R[i,:]
       a         = A[i,:]
       near      = d > NEARL
@@ -173,7 +173,7 @@ def main():
 
     X += SX*STP
     Y += SY*STP
-    if random()<0.05:
+    if random()<0.01:
       makeFriends(int(random()*NUM),R,F)
     t = time()
 
@@ -181,25 +181,25 @@ def main():
 
   sur,ctx = ctx_init()
 
-  FARL  = 0.11
-  NEARL = 0.01
+  FARL  = 0.15
+  NEARL = 0.02
   X  = zeros(NUM, dtype=float)
   Y  = zeros(NUM, dtype=float)
   SX = zeros(NUM, dtype=float)
   SY = zeros(NUM, dtype=float)
   R  = zeros((NUM,NUM), dtype=float)
   A  = zeros((NUM,NUM), dtype=float)
-  F  = csr_matrix((NUM,NUM), dtype=byte)
+  F  = zeros((NUM,NUM), dtype=byte)
 
-  colors = get_colors('./color/color_flyby2.gif')
+  colors = get_colors('./color/color_black.gif')
 
   pInit(X,Y)
   
   t = time()
-  for i in xrange(steps):
+  for i in xrange(steps): 
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     render_connection_points(X,Y,R,A,F,ctx,colors)
-    if not (i+1)%1000:
+    if not (i+1)%4000:
       sur.write_to_png('{:s}.{:06d}.png'.format(OUT,i+1))
       print i,time()-t
       t = time()
