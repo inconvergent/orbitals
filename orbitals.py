@@ -7,7 +7,8 @@ from random import random
 from operator import itemgetter
 from time import time
 import numpy as np
-from scipy.sparse import csr_matrix,lil_matrix,csc_matrix
+
+
 
 PI     = pi
 PII    = PI*2.
@@ -66,12 +67,12 @@ def getColors(f):
 
 def makeFriends(i,R,F):
   
-  if F[i,:].nnz > MAXFS:
+  if F[i,:].sum() > MAXFS:
     return
 
   r = []
   for j in xrange(NUM):
-    if i != j and F[j,:].nnz < MAXFS\
+    if i != j and F[j,:].sum() < MAXFS\
       and not F[j,i]:
         r.append((R[i,j],j))
   if not len(r):
@@ -121,7 +122,7 @@ def run(X,Y,SX,SY,R,A,F,NEARL,FARL):
   SX[:] = 0.; SY[:] = 0.
   
   for i in xrange(NUM):
-    xF        = np.logical_not(F[i,:].toarray()).flatten()
+    xF        = np.logical_not(F[i,:])
     d         = R[i,:]
     a         = A[i,:]
     near      = d > NEARL
@@ -155,7 +156,7 @@ def main():
   SY = np.zeros(NUM,        dtype=np.float)
   R  = np.zeros((NUM,NUM),  dtype=np.float)
   A  = np.zeros((NUM,NUM),  dtype=np.float)
-  F  = csr_matrix((NUM,NUM),dtype=np.byte)
+  F  = np.zeros((NUM,NUM),  dtype=np.byte)
 
   #colors = getColors('./resources/colors3.gif')
   colors = [(0.,0.,0.)]
