@@ -24,14 +24,14 @@ def main():
   PII    = PI*2.
 
   N      = 20000
-  NUM    = 1000
+  NUM    = 500
   BACK   = 1.
-  OUT    = '/data/orbitals.kunstplass/orbitals.oo'
+  OUT    = '/data/orbitals.kunstplass/orbitals.time'
   RAD    = 0.26
   GRAINS = 45
   STP    = 0.000001
   steps  = 500000
-  MAXFS  = 10
+  MAXFS  = 50
   ALPHA  = 0.05
 
   def pInit(X,Y):
@@ -206,5 +206,16 @@ def main():
 
   return
 
-if __name__ == '__main__' : main()
+if __name__ == '__main__' :
+
+  if True:
+    import pstats
+    import cProfile
+    OUT = 'profile'
+    pfilename = '{:s}.profile'.format(OUT)
+    cProfile.run('main()',pfilename)
+    p = pstats.Stats(pfilename)
+    p.strip_dirs().sort_stats('cumulative').print_stats()
+  else:
+    main()
 
