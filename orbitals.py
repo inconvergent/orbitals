@@ -23,15 +23,15 @@ def main():
   PI     = pi
   PII    = PI*2.
 
-  N      = 20000
-  NUM    = 500
+  N      = 5000
+  NUM    = 400
   BACK   = 1.
-  OUT    = '/data/orbitals.kunstplass/orbitals.time'
+  OUT    = '/data/orbitals.kunstplass/show.4'
   RAD    = 0.26
-  GRAINS = 45
-  STP    = 0.000001
+  GRAINS = 30
+  STP    = 0.00001
   steps  = 500000
-  MAXFS  = 50
+  MAXFS  = 200
   ALPHA  = 0.05
 
   def pInit(X,Y):
@@ -173,7 +173,7 @@ def main():
 
     X += SX*STP
     Y += SY*STP
-    if random()<0.01:
+    if random()<0.1:
       makeFriends(int(random()*NUM),R,F)
     t = time()
 
@@ -181,7 +181,7 @@ def main():
 
   sur,ctx = ctx_init()
 
-  FARL  = 0.15
+  FARL  = 0.25
   NEARL = 0.02
   X  = zeros(NUM, dtype=float)
   Y  = zeros(NUM, dtype=float)
@@ -191,7 +191,9 @@ def main():
   A  = zeros((NUM,NUM), dtype=float)
   F  = zeros((NUM,NUM), dtype=byte)
 
-  colors = get_colors('./color/color_black.gif')
+  #colors = get_colors('./color/color_black.gif')
+  #colors = get_colors('./color/color_flyby2.gif')
+  colors = [(0,0,0)]
 
   pInit(X,Y)
   
@@ -199,7 +201,7 @@ def main():
   for i in xrange(steps): 
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     render_connection_points(X,Y,R,A,F,ctx,colors)
-    if not (i+1)%4000:
+    if not (i+1)%3000:
       sur.write_to_png('{:s}.{:06d}.png'.format(OUT,i+1))
       print i,time()-t
       t = time()
