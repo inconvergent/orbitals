@@ -1,28 +1,26 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import cairo,Image
-from operator import itemgetter
+import cairo, Image
 import numpy as np
-from numpy import sin, cos, pi, arctan2, square,sqrt, logical_not, linspace, array
-from numpy.random import random, randint
-import gtk, gobject
+from numpy import sin, cos, pi, arctan2, square,sqrt, logical_not,\
+                  linspace, array, zeros
+from numpy.random import random, randint, shuffle
+from time import time
 
-## comment out to get new results on each run
-np.random.seed(1)
-
+#np.random.seed(1)
 
 PI = pi
-PII = PI*2.
+TWOPI = pi*2.
 
-N = 1080 # size of png image
+SIZE = 1000 # size of png image
 NUM = 200 # number of nodes
 BACK = 1. # background color 
 GRAINS = 5
 STP = 0.0001 # scale motion in each iteration by this
 MAXFS = 5 # max friendships pr node
 ALPHA = 0.05 # opacity of drawn points
-ONE = 1./N
+ONE = 1./SIZE
 
 FILENAME = 'res'
 
@@ -30,15 +28,12 @@ RAD = 0.20 # radius of starting circle
 FARL  = 0.13 # ignore "enemies" beyond this radius
 NEARL = 0.02 # do not attempt to approach friends close than this
 
-UPDATE_NUM = 40 # dump every UPDATE_NUM iteration to file
-#UPDATE_NUM = 10 # dump every UPDATE_NUM iteration to file
+UPDATE_NUM = 1000
 
 FRIENDSHIP_RATIO = 0.1 # probability of friendship dens
 FRIENDSHIP_INITIATE_PROB = 0.1 # probability of friendship initation attempt
 
 COLOR_PATH = 'color/dark_cyan_white_black.gif'
-
-ANGULAR_NOISE = PII/50.
 
 class Render(object):
 
@@ -51,9 +46,9 @@ class Render(object):
 
   def __init_cairo(self):
 
-    sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
+    sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,SIZE,SIZE)
     ctx = cairo.Context(sur)
-    ctx.scale(N,N)
+    ctx.scale(SIZE,SIZE)
     ctx.set_source_rgb(BACK,BACK,BACK)
     ctx.rectangle(0,0,1,1)
     ctx.fill()
@@ -72,7 +67,7 @@ class Render(object):
         r,g,b = rgbim.getpixel((i,j))
         res.append((r*scale,g*scale,b*scale))
 
-    np.random.shuffle(res)
+    shuffle(res)
     self.colors = res
     self.n_colors = len(res)
 
@@ -92,22 +87,19 @@ class Render(object):
     return res
 
 
-  def render_connections(self,X,Y,F,A,R):
-
-    # everything is black
-    #self.ctx.set_source_rgba(0,0,0,ALPHA)
+  def connections(self,X,Y,F,A,R):
 
     indsx,indsy = F.nonzero()
     mask = indsx >= indsy 
     for i,j in zip(indsx[mask],indsy[mask]):
       a = A[i,j]
       d = R[i,j]
-      scales = np.random.random(GRAINS)*d
+      scales = random(GRAINS)*d
       xp = X[i] - scales*cos(a)
       yp = Y[i] - scales*sin(a)
      
       # colors. wooo!
-      r,g,b = self.colors[ (i*N+j) % self.n_colors ]
+      r,g,b = self.colors[ (i*NUM+j) % self.n_colors ]
       self.ctx.set_source_rgba(r,g,b,ALPHA)
 
       for x,y in zip(xp,yp):
@@ -117,6 +109,7 @@ class Render(object):
 def set_distances(X,Y,A,R):
 
   for i in xrange(NUM):
+
     dx = X[i] - X
     dy = Y[i] - Y
     R[i,:] = square(dx)+square(dy)
@@ -156,27 +149,30 @@ def main():
 
   render = Render()
 
-  X = np.zeros(NUM,'float')
-  Y = np.zeros(NUM,'float')
-  SX = np.zeros(NUM,'float')
-  SY = np.zeros(NUM,'float')
-  R = np.zeros((NUM,NUM),'float')
-  A = np.zeros((NUM,NUM),'float')
-  F = np.zeros((NUM,NUM),'byte')
+  X = zeros(NUM,'float')
+  Y = zeros(NUM,'float')
+  SX = zeros(NUM,'float')
+  SY = zeros(NUM,'float')
+  R = zeros((NUM,NUM),'float')
+  A = zeros((NUM,NUM),'float')
+  F = zeros((NUM,NUM),'byte')
 
   for i in xrange(NUM):
-    the = random()*PII
+    the = random()*TWOPI
     x = RAD * sin(the)
     y = RAD * cos(the)
     X[i] = 0.5+x
     Y[i] = 0.5+y
 
+  t_cum = 0.
   for itt in xrange(100000):
 
     set_distances(X,Y,A,R)
     
     SX[:] = 0.
     SY[:] = 0.
+
+    t = time()
     
     for i in xrange(NUM):
       xF = logical_not(F[i,:])
@@ -190,34 +186,31 @@ def main():
       far[i] = False
       speed = FARL - d[far]
 
-      noise_far_a = 0.
-      noise_near_a = 0.
-
-      ## adds noise. can be commented out
-      #noise_near_a = (1.-2.*random(near.sum()))*ANGULAR_NOISE
-      #noise_far_a = (1.-2.*random(far.sum()))*ANGULAR_NOISE
-
-      SX[near] += cos(a[near] + noise_near_a)
-      SY[near] += sin(a[near] + noise_near_a)
-      SX[far] -= speed*cos(a[far] + noise_far_a)
-      SY[far] -= speed*sin(a[far] + noise_far_a)
+      SX[near] += cos(a[near])
+      SY[near] += sin(a[near])
+      SX[far] -= speed*cos(a[far])
+      SY[far] -= speed*sin(a[far])
 
     X += SX*STP
     Y += SY*STP
 
-    i = randint(NUM)
     if random()<FRIENDSHIP_INITIATE_PROB:
-      make_friends(i,F,R)
 
-    render.render_connections(X,Y,F,A,R)
+      k = randint(NUM)
+      make_friends(k,F,R)
 
-    if not itt%1000:
+    render.connections(X,Y,F,A,R)
 
-      fn = '{:s}{:05d}.png'.format(FILENAME,itt)
-      print fn
+    t_cum += time()-t
+
+    if not (itt+1)%UPDATE_NUM:
+
+      fn = '{:s}_{:05d}.png'.format(FILENAME,itt+1)
+      print fn, t_cum
       render.sur.write_to_png(fn)
 
-  
+      t_cum = 0.
+
 
 if __name__ == '__main__' :
   main()
