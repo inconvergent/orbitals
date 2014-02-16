@@ -10,30 +10,48 @@ from time import time
 
 #np.random.seed(1)
 
+FILENAME = 'res_g'
+COLOR_PATH = 'color/dark_cyan_white_black.gif'
+
 PI = pi
 TWOPI = pi*2.
 
-SIZE = 1000 # size of png image
-NUM = 200 # number of nodes
-BACK = 1. # background color 
-GRAINS = 5
-STP = 0.0001 # scale motion in each iteration by this
+SIZE = 10000 # size of png image
+NUM = 600 # number of nodes
 MAXFS = 5 # max friendships pr node
+
+BACK = 1. # background color 
+GRAINS = 30
 ALPHA = 0.05 # opacity of drawn points
+STEPS = 10**7
+
 ONE = 1./SIZE
+#STP = 0.0001 # scale motion in each iteration by this
+STP = ONE/15.
 
-FILENAME = 'res'
+RAD = 0.25 # radius of starting circle
+FARL  = 0.1 # ignore "enemies" beyond this radius
+NEARL = 0.01 # do not attempt to approach friends close than this
 
-RAD = 0.20 # radius of starting circle
-FARL  = 0.13 # ignore "enemies" beyond this radius
-NEARL = 0.02 # do not attempt to approach friends close than this
-
-UPDATE_NUM = 1000
+UPDATE_NUM = 2000
 
 FRIENDSHIP_RATIO = 0.1 # probability of friendship dens
-FRIENDSHIP_INITIATE_PROB = 0.1 # probability of friendship initation attempt
+FRIENDSHIP_INITIATE_PROB = 0.005 # probability of friendship initation attempt
 
-COLOR_PATH = 'color/dark_cyan_white_black.gif'
+print
+print 'SIZE', SIZE
+print 'NUM', NUM
+print 'STP', STP
+print 'ONE', ONE
+print 
+print 'MAXFS', MAXFS
+print 'GRAINS', GRAINS
+print 'COLOR_PATH', COLOR_PATH
+print 'RAD', RAD
+print 'FRIENDSHIP_RATIO', FRIENDSHIP_RATIO
+print 'FRIENDSHIP_INITIATE_PROB', FRIENDSHIP_INITIATE_PROB
+print
+
 
 class Render(object):
 
@@ -71,22 +89,6 @@ class Render(object):
     self.colors = res
     self.n_colors = len(res)
 
-  def step_wrap(self,*args):
-
-    res, added_new = self.step()
-
-    if not self.itt%UPDATE_NUM:
-      self.expose()
-
-      ## write frames to file:
-      #fn = 'image{:05d}.png'.format(self.num_img)
-      #self.sur.write_to_png(fn)
-      #self.num_img+=1
-      #print fn
-
-    return res
-
-
   def connections(self,X,Y,F,A,R):
 
     indsx,indsy = F.nonzero()
@@ -98,7 +100,6 @@ class Render(object):
       xp = X[i] - scales*cos(a)
       yp = Y[i] - scales*sin(a)
      
-      # colors. wooo!
       r,g,b = self.colors[ (i*NUM+j) % self.n_colors ]
       self.ctx.set_source_rgba(r,g,b,ALPHA)
 
@@ -165,7 +166,7 @@ def main():
     Y[i] = 0.5+y
 
   t_cum = 0.
-  for itt in xrange(100000):
+  for itt in xrange(STEPS):
 
     set_distances(X,Y,A,R)
     
@@ -193,6 +194,10 @@ def main():
 
     X += SX*STP
     Y += SY*STP
+
+    if not (itt+1)%100:
+
+      print itt, sqrt(square(SX)+square(SY)).max()
 
     if random()<FRIENDSHIP_INITIATE_PROB:
 
