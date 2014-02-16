@@ -26,44 +26,60 @@ def main():
   N      = 5000
   NUM    = 400
   BACK   = 1.
-  OUT    = '/data/orbitals.kunstplass/show.4'
+  OUT    = './box.aa'
   RAD    = 0.26
-  GRAINS = 30
+  GRAINS = 20
   STP    = 0.00001
   steps  = 500000
-  MAXFS  = 200
+  MAXFS  = 100
   ALPHA  = 0.05
 
   def pInit(X,Y):
-    bridge = zeros(NUM)
-    bridge[:NUM/2] = np.random.normal(size=NUM/2)*0.002
-    bridge[NUM/2:] = -bridge[:NUM/2]
-    np.random.shuffle(bridge)
-    bridge[:] = 0.15 + np.cumsum(bridge[:])
 
-    theta = np.arange(NUM,dtype=np.float) / NUM * PII
+    ##
 
-    for v in xrange(NUM):
-      t = theta[v]
-      X[v] = 0.5 + cos(t)*bridge[v]
-      Y[v] = 0.5 + sin(t)*bridge[v]
+    #bridge = zeros(NUM)
+    #bridge[:NUM/2] = np.random.normal(size=NUM/2)*0.002
+    #bridge[NUM/2:] = -bridge[:NUM/2]
+    #np.random.shuffle(bridge)
+    #bridge[:] = 0.15 + np.cumsum(bridge[:])
+
+    #theta = np.arange(NUM,dtype=np.float) / NUM * PII
+    #for v in xrange(NUM):
+      #t = theta[v]
+      #X[v] = 0.5 + cos(t)*bridge[v]
+      #Y[v] = 0.5 + sin(t)*bridge[v]
+
+    ##
+
+    #lines = 4
+    #v = 0
+    #for i in xrange(lines):
+      #for j in xrange(NUM/lines):
+
+        #X[v] = 0.3 + i*0.4/3.0
+        #Y[v] = 0.3 + random()*0.4
+        #v += 1
 
 
-  #def pInit(X,Y):
+    ## 
 
-    #for i in xrange(NUM):
-      #the = random()*PII
-      #r = RAD
-      #x = r * sin(the)
-      #y = r * cos(the)
-      #X[i] = 0.5+x
-      #Y[i] = 0.5+y
+    X[:100] = 0.3 + random(100)*0.4
+    Y[:100] = 0.3
+    X[100:200] = 0.3 + random(100)*0.4
+    Y[100:200] = 1 - 0.3
+
+    X[200:300] = 0.3
+    Y[200:300] = 0.3 + random(100)*0.4
+    X[300:] = 1 - 0.3
+    Y[300:] = 0.3 + random(100)*0.4
 
 
   def ctx_init():
     sur = cairo.ImageSurface(cairo.FORMAT_ARGB32,N,N)
     ctx = cairo.Context(sur)
     ctx.scale(N,N)
+    #ctx.set_source_rgba(BACK,BACK,BACK,0)
     ctx.set_source_rgb(BACK,BACK,BACK)
     ctx.rectangle(0,0,1,1)
     ctx.fill()
@@ -181,7 +197,7 @@ def main():
 
   sur,ctx = ctx_init()
 
-  FARL  = 0.25
+  FARL  = 0.20
   NEARL = 0.02
   X  = zeros(NUM, dtype=float)
   Y  = zeros(NUM, dtype=float)
@@ -191,9 +207,8 @@ def main():
   A  = zeros((NUM,NUM), dtype=float)
   F  = zeros((NUM,NUM), dtype=byte)
 
-  #colors = get_colors('./color/color_black.gif')
-  #colors = get_colors('./color/color_flyby2.gif')
-  colors = [(0,0,0)]
+  #colors = [(0,0,0)]
+  colors = get_colors('./color/color.gif')
 
   pInit(X,Y)
   
@@ -201,8 +216,8 @@ def main():
   for i in xrange(steps): 
     run(X,Y,SX,SY,R,A,F,NEARL,FARL)
     render_connection_points(X,Y,R,A,F,ctx,colors)
-    if not (i+1)%3000:
-      sur.write_to_png('{:s}.{:06d}.png'.format(OUT,i+1))
+    if not i%1000 and not i==0:
+      sur.write_to_png('{:s}.{:06d}.png'.format(OUT,i))
       print i,time()-t
       t = time()
 
