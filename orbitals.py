@@ -10,15 +10,14 @@ from time import time
 
 #np.random.seed(1)
 
-FILENAME = 'res_g'
 COLOR_PATH = 'color/dark_cyan_white_black.gif'
 
 PI = pi
 TWOPI = pi*2.
 
 SIZE = 10000 # size of png image
-NUM = 600 # number of nodes
-MAXFS = 5 # max friendships pr node
+NUM = 400 # number of nodes
+MAXFS = 6 # max friendships pr node
 
 BACK = 1. # background color 
 GRAINS = 30
@@ -29,14 +28,19 @@ ONE = 1./SIZE
 #STP = 0.0001 # scale motion in each iteration by this
 STP = ONE/15.
 
-RAD = 0.25 # radius of starting circle
-FARL  = 0.1 # ignore "enemies" beyond this radius
+RAD = 0.20 # radius of starting circle
+FARL  = 0.15 # ignore "enemies" beyond this radius
 NEARL = 0.01 # do not attempt to approach friends close than this
 
 UPDATE_NUM = 2000
 
 FRIENDSHIP_RATIO = 0.1 # probability of friendship dens
-FRIENDSHIP_INITIATE_PROB = 0.005 # probability of friendship initation attempt
+FRIENDSHIP_INITIATE_PROB = 0.03 # probability of friendship initation attempt
+
+FILENAME = 'res_c_num{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}'\
+           .format(NUM,MAXFS,NEARL,FARL,\
+                   FRIENDSHIP_RATIO,FRIENDSHIP_INITIATE_PROB)
+FILENAME = FILENAME + '_itt{:05d}.png'
 
 print
 print 'SIZE', SIZE
@@ -210,7 +214,8 @@ def main():
 
     if not (itt+1)%UPDATE_NUM:
 
-      fn = '{:s}_{:05d}.png'.format(FILENAME,itt+1)
+
+      fn = FILENAME.format(itt+1)
       print fn, t_cum
       render.sur.write_to_png(fn)
 
