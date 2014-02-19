@@ -15,12 +15,12 @@ COLOR_PATH = 'color/dark_cyan_white_black.gif'
 PI = pi
 TWOPI = pi*2.
 
-SIZE = 10000 # size of png image
-NUM = 400 # number of nodes
-MAXFS = 6 # max friendships pr node
+SIZE = 20000 # size of png image
+NUM = 500 # number of nodes
+MAXFS = 10 # max friendships pr node
 
 BACK = 1. # background color 
-GRAINS = 30
+GRAINS = 40
 ALPHA = 0.05 # opacity of drawn points
 STEPS = 10**7
 
@@ -28,18 +28,18 @@ ONE = 1./SIZE
 #STP = 0.0001 # scale motion in each iteration by this
 STP = ONE/15.
 
-RAD = 0.20 # radius of starting circle
-FARL  = 0.15 # ignore "enemies" beyond this radius
+RAD = 0.25 # radius of starting circle
+FARL  = 0.17 # ignore "enemies" beyond this radius
 NEARL = 0.01 # do not attempt to approach friends close than this
 
-UPDATE_NUM = 2000
+UPDATE_NUM = 3000
 
 FRIENDSHIP_RATIO = 0.1 # probability of friendship dens
-FRIENDSHIP_INITIATE_PROB = 0.03 # probability of friendship initation attempt
+FRIENDSHIP_INITIATE_PROB = 0.05 # probability of friendship initation attempt
 
-FILENAME = 'res_c_num{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}'\
+FILENAME = 'res_20k_f_num{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}_rad{:2.4f}'\
            .format(NUM,MAXFS,NEARL,FARL,\
-                   FRIENDSHIP_RATIO,FRIENDSHIP_INITIATE_PROB)
+                   FRIENDSHIP_RATIO,FRIENDSHIP_INITIATE_PROB,RAD)
 FILENAME = FILENAME + '_itt{:05d}.png'
 
 print
