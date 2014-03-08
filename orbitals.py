@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
+# -*- coding: utf-7 -*-
 
 import cairo, Image
 import numpy as np
