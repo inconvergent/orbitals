@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-7 -*-
+# -*- coding: utf-8 -*-
 
 import cairo, Image
 import numpy as np
@@ -10,37 +10,39 @@ from time import time
 
 #np.random.seed(1)
 
-COLOR_PATH = 'color/dark_cyan_white_black.gif'
+#COLOR_PATH = 'color/dark_cyan_white_black.gif'
+COLOR_PATH = 'color/shimmering.gif'
 
 PI = pi
 TWOPI = pi*2.
 
-SIZE = 20000 # size of png image
+SIZE = 5000 # size of png image
 NUM = 500 # number of nodes
-MAXFS = 10 # max friendships pr node
+MAXFS = 5 # max friendships pr node
 
 BACK = 1. # background color 
-GRAINS = 40
+GRAINS = 20
 ALPHA = 0.05 # opacity of drawn points
 STEPS = 10**7
 
 ONE = 1./SIZE
 #STP = 0.0001 # scale motion in each iteration by this
-STP = ONE/15.
+STP = ONE/10
 
-RAD = 0.25 # radius of starting circle
-FARL  = 0.17 # ignore "enemies" beyond this radius
-NEARL = 0.01 # do not attempt to approach friends close than this
+RAD = 0.26 # radius of starting circle
+FARL  = 0.13 # ignore "enemies" beyond this radius
+NEARL = 0.02 # do not attempt to approach friends close than this
 
-UPDATE_NUM = 3000
+UPDATE_NUM = 1000
 
 FRIENDSHIP_RATIO = 0.1 # probability of friendship dens
 FRIENDSHIP_INITIATE_PROB = 0.05 # probability of friendship initation attempt
 
-FILENAME = 'res_20k_f_num{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}_rad{:2.4f}'\
-           .format(NUM,MAXFS,NEARL,FARL,\
-                   FRIENDSHIP_RATIO,FRIENDSHIP_INITIATE_PROB,RAD)
-FILENAME = FILENAME + '_itt{:05d}.png'
+FILENAME = './'
+FILENAME += 'speed_f_num{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}_rad{:2.4f}'\
+             .format(NUM,MAXFS,NEARL,FARL,FRIENDSHIP_RATIO,\
+                     FRIENDSHIP_INITIATE_PROB,RAD)
+FILENAME += '_itt{:05d}.png'
 
 print
 print 'SIZE', SIZE
@@ -62,9 +64,11 @@ class Render(object):
   def __init__(self):
 
     self.__init_cairo()
-    #self.__get_colors(COLOR_PATH)
-    self.colors = [(0,0,0)]
-    self.n_colors = 1
+    self.__get_colors(COLOR_PATH)
+
+    #self.colors = [(0,0,0)]
+
+    self.n_colors = len(self.colors)
 
   def __init_cairo(self):
 
@@ -91,7 +95,6 @@ class Render(object):
 
     shuffle(res)
     self.colors = res
-    self.n_colors = len(res)
 
   def connections(self,X,Y,F,A,R):
 
@@ -183,18 +186,21 @@ def main():
       xF = logical_not(F[i,:])
       d = R[i,:]
       a = A[i,:]
-      near = d > NEARL
-      near[xF] = False
-      far = d < FARL
-      far[near] = False
-      near[i] = False
-      far[i] = False
-      speed = FARL - d[far]
+      attract = d > NEARL
+      too_near = logical_not(attract)
+      attract[xF] = False
+      repel = d < FARL
+      repel[attract] = False
+      repel[too_near] = True
+      attract[i] = False
+      repel[i] = False
 
-      SX[near] += cos(a[near])
-      SY[near] += sin(a[near])
-      SX[far] -= speed*cos(a[far])
-      SY[far] -= speed*sin(a[far])
+      repel_speed = FARL - d[repel]
+
+      SX[attract] += cos(a[attract])
+      SY[attract] += sin(a[attract])
+      SX[repel] -= repel_speed*cos(a[repel])
+      SY[repel] -= repel_speed*sin(a[repel])
 
     X += SX*STP
     Y += SY*STP
