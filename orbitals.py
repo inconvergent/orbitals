@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf-7 -*-
+# -*- coding: utf-8 -*-
 
 import cairo, Image
 import numpy as np
@@ -10,7 +10,9 @@ from time import time
 
 #np.random.seed(1)
 
-COLOR_PATH = 'color/dark_cyan_white_black.gif'
+#COLOR_PATH = 'color/dark_cyan_white_black.gif'
+#COLOR_PATH = 'color/shimmering.gif'
+COLOR_PATH = 'color/color_purple_black2.gif'
 
 PI = pi
 TWOPI = pi*2.
@@ -28,19 +30,20 @@ ONE = 1./SIZE
 #STP = 0.0001 # scale motion in each iteration by this
 STP = ONE/15.
 
-RAD = 0.25 # radius of starting circle
-FARL  = 0.17 # ignore "enemies" beyond this radius
-NEARL = 0.01 # do not attempt to approach friends close than this
+RAD = 0.26 # radius of starting circle
+FARL  = 0.13 # ignore "enemies" beyond this radius
+NEARL = 0.02 # do not attempt to approach friends close than this
 
-UPDATE_NUM = 3000
+UPDATE_NUM = 4000
 
 FRIENDSHIP_RATIO = 0.1 # probability of friendship dens
 FRIENDSHIP_INITIATE_PROB = 0.05 # probability of friendship initation attempt
 
-FILENAME = 'res_20k_f_num{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}_rad{:2.4f}'\
-           .format(NUM,MAXFS,NEARL,FARL,\
-                   FRIENDSHIP_RATIO,FRIENDSHIP_INITIATE_PROB,RAD)
-FILENAME = FILENAME + '_itt{:05d}.png'
+FILENAME = '/data/kp5_orbitals_mk2/purple_2h_num'
+FILENAME += '{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}_rad{:2.4f}'\
+            .format(NUM,MAXFS,NEARL,FARL,\
+                    FRIENDSHIP_RATIO,FRIENDSHIP_INITIATE_PROB,RAD)
+FILENAME += '_itt{:05d}.png'
 
 print
 print 'SIZE', SIZE
@@ -62,9 +65,11 @@ class Render(object):
   def __init__(self):
 
     self.__init_cairo()
-    #self.__get_colors(COLOR_PATH)
-    self.colors = [(0,0,0)]
-    self.n_colors = 1
+    self.__get_colors(COLOR_PATH)
+
+    #self.colors = [(0,0,0)]
+
+    self.n_colors = len(self.colors)
 
   def __init_cairo(self):
 
@@ -91,7 +96,6 @@ class Render(object):
 
     shuffle(res)
     self.colors = res
-    self.n_colors = len(res)
 
   def connections(self,X,Y,F,A,R):
 
