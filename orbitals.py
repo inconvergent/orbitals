@@ -11,8 +11,8 @@ from time import time
 #np.random.seed(1)
 
 #COLOR_PATH = 'color/dark_cyan_white_black.gif'
-#COLOR_PATH = 'color/shimmering.gif'
-COLOR_PATH = 'color/color_purple_black2.gif'
+COLOR_PATH = 'color/shimmering.gif'
+#COLOR_PATH = 'color/color_purple_black2.gif'
 
 PI = pi
 TWOPI = pi*2.
@@ -39,7 +39,7 @@ UPDATE_NUM = 4000
 FRIENDSHIP_RATIO = 0.1 # probability of friendship dens
 FRIENDSHIP_INITIATE_PROB = 0.05 # probability of friendship initation attempt
 
-FILENAME = '/data/kp5_orbitals_mk2/purple_2h_num'
+FILENAME = './benchmark'
 FILENAME += '{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}_rad{:2.4f}'\
             .format(NUM,MAXFS,NEARL,FARL,\
                     FRIENDSHIP_RATIO,FRIENDSHIP_INITIATE_PROB,RAD)
@@ -175,57 +175,69 @@ def main():
 
   t_cum = 0.
   for itt in xrange(STEPS):
+    try:
 
-    set_distances(X,Y,A,R)
-    
-    SX[:] = 0.
-    SY[:] = 0.
+      set_distances(X,Y,A,R)
+      
+      SX[:] = 0.
+      SY[:] = 0.
 
-    t = time()
-    
-    for i in xrange(NUM):
-      xF = logical_not(F[i,:])
-      d = R[i,:]
-      a = A[i,:]
-      near = d > NEARL
-      near[xF] = False
-      far = d < FARL
-      far[near] = False
-      near[i] = False
-      far[i] = False
-      speed = FARL - d[far]
+      t = time()
+      
+      for i in xrange(NUM):
+        xF = logical_not(F[i,:])
+        d = R[i,:]
+        a = A[i,:]
+        near = d > NEARL
+        near[xF] = False
+        far = d < FARL
+        far[near] = False
+        near[i] = False
+        far[i] = False
+        speed = FARL - d[far]
 
-      SX[near] += cos(a[near])
-      SY[near] += sin(a[near])
-      SX[far] -= speed*cos(a[far])
-      SY[far] -= speed*sin(a[far])
+        SX[near] += cos(a[near])
+        SY[near] += sin(a[near])
+        SX[far] -= speed*cos(a[far])
+        SY[far] -= speed*sin(a[far])
 
-    X += SX*STP
-    Y += SY*STP
+      X += SX*STP
+      Y += SY*STP
 
-    if not (itt+1)%100:
+      if not (itt+1)%100:
 
-      print itt, sqrt(square(SX)+square(SY)).max()
+        print itt, sqrt(square(SX)+square(SY)).max()
 
-    if random()<FRIENDSHIP_INITIATE_PROB:
+      if random()<FRIENDSHIP_INITIATE_PROB:
 
-      k = randint(NUM)
-      make_friends(k,F,R)
+        k = randint(NUM)
+        make_friends(k,F,R)
 
-    render.connections(X,Y,F,A,R)
+      render.connections(X,Y,F,A,R)
 
-    t_cum += time()-t
+      t_cum += time()-t
 
-    if not (itt+1)%UPDATE_NUM:
+      if not (itt+1)%UPDATE_NUM:
 
 
-      fn = FILENAME.format(itt+1)
-      print fn, t_cum
-      render.sur.write_to_png(fn)
+        fn = FILENAME.format(itt+1)
+        print fn, t_cum
+        render.sur.write_to_png(fn)
 
-      t_cum = 0.
+        t_cum = 0.
+
+    except KeyboardInterrupt:
+      break
 
 
 if __name__ == '__main__' :
-  main()
+  if True:
+    import pstats, cProfile
+    OUT = 'profile'
+    pfilename = 'profile.profile'
+    cProfile.run('main()',pfilename)
+    p = pstats.Stats(pfilename)
+    p.strip_dirs().sort_stats('cumulative').print_stats()
+  else:
+    main()
 
