@@ -2,17 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import cairo, Image
-import numpy as np
-from numpy import sin, cos, pi, arctan2, square,sqrt, logical_not,\
-                  linspace, array, zeros
+#import numpy as np
+from numpy import sin, cos, pi, arctan2, square,sqrt, logical_not, zeros
 from numpy.random import random, randint, shuffle
 from time import time
 
-#np.random.seed(1)
-
-#COLOR_PATH = 'color/dark_cyan_white_black.gif'
-#COLOR_PATH = 'color/shimmering.gif'
-COLOR_PATH = 'color/color_purple_black2.gif'
+#COLOR_PATH = '../colors/dark_cyan_white_black.gif'
+COLOR_PATH = '../colors/shimmering.gif'
+#COLOR_PATH = 'color/color_purple_black2.gif'
 
 PI = pi
 TWOPI = pi*2.
@@ -21,7 +18,7 @@ SIZE = 20000 # size of png image
 NUM = 500 # number of nodes
 MAXFS = 10 # max friendships pr node
 
-BACK = 1. # background color 
+BACK = 1. # background color
 GRAINS = 40
 ALPHA = 0.05 # opacity of drawn points
 STEPS = 10**7
@@ -39,9 +36,9 @@ UPDATE_NUM = 4000
 FRIENDSHIP_RATIO = 0.1 # probability of friendship dens
 FRIENDSHIP_INITIATE_PROB = 0.05 # probability of friendship initation attempt
 
-FILENAME = '/data/kp5_orbitals_mk2/purple_2h_num'
+FILENAME = '/data/ff_sindre/shimering_f'
 FILENAME += '{:d}_fs{:d}_near{:2.4f}_far{:2.4f}_pa{:2.4f}_pb{:2.4f}_rad{:2.4f}'\
-            .format(NUM,MAXFS,NEARL,FARL,\
+            .format(NUM,MAXFS,NEARL,FARL,
                     FRIENDSHIP_RATIO,FRIENDSHIP_INITIATE_PROB,RAD)
 FILENAME += '_itt{:05d}.png'
 
@@ -50,7 +47,7 @@ print 'SIZE', SIZE
 print 'NUM', NUM
 print 'STP', STP
 print 'ONE', ONE
-print 
+print
 print 'MAXFS', MAXFS
 print 'GRAINS', GRAINS
 print 'COLOR_PATH', COLOR_PATH
@@ -68,7 +65,6 @@ class Render(object):
     self.__get_colors(COLOR_PATH)
 
     #self.colors = [(0,0,0)]
-
     self.n_colors = len(self.colors)
 
   def __init_cairo(self):
@@ -100,14 +96,14 @@ class Render(object):
   def connections(self,X,Y,F,A,R):
 
     indsx,indsy = F.nonzero()
-    mask = indsx >= indsy 
+    mask = indsx >= indsy
     for i,j in zip(indsx[mask],indsy[mask]):
       a = A[i,j]
       d = R[i,j]
       scales = random(GRAINS)*d
       xp = X[i] - scales*cos(a)
       yp = Y[i] - scales*sin(a)
-     
+
       r,g,b = self.colors[ (i*NUM+j) % self.n_colors ]
       self.ctx.set_source_rgba(r,g,b,ALPHA)
 
@@ -129,7 +125,7 @@ def set_distances(X,Y,A,R):
 def make_friends(i,F,R):
 
   cand_num = F.sum(axis=1)
-  
+
   if cand_num[i]>=MAXFS:
     return
 
@@ -168,21 +164,25 @@ def main():
 
   for i in xrange(NUM):
     the = random()*TWOPI
-    x = RAD * sin(the)
-    y = RAD * cos(the)
-    X[i] = 0.5+x
-    Y[i] = 0.5+y
+    x = RAD*sin(the)
+    y = RAD*cos(the)
+
+    #nrad = (0.5-1*random())*RAD*0.8
+    #nthe = TWOPI*random()
+
+    X[i] = 0.5+x #+ nrad*cos(nthe)
+    Y[i] = 0.5+y #+ nrad*sin(nthe)
 
   t_cum = 0.
   for itt in xrange(STEPS):
 
     set_distances(X,Y,A,R)
-    
+
     SX[:] = 0.
     SY[:] = 0.
 
     t = time()
-    
+
     for i in xrange(NUM):
       xF = logical_not(F[i,:])
       d = R[i,:]
